@@ -132,7 +132,7 @@ export function websiteLd() {
       '@type': 'Organization',
       name: SITE.name,
       url: SITE.url,
-      logo: abs('/favicon.svg'),
+      logo: abs('/brand/logo-square.png'),
     },
   ];
 }

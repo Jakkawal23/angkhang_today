@@ -114,6 +114,15 @@ node scripts/add-photos.mjs <slug> "<โฟลเดอร์รูปห้อ�
 node scripts/make-photo-folders.mjs   # สร้างโฟลเดอร์รูปให้ที่พักใหม่
 ```
 
+## โลโก้
+
+ไฟล์โลโก้ทุกแบบอยู่ที่ [public/brand/](public/brand/README.md) (SVG + PNG: แนวนอน, จัตุรัส, จัตุรัสมีตัวหนังสือ, แบบสีขาว, favicon)
+
+```bash
+npm run logo                                   # สร้างไฟล์โลโก้ทุกแบบใหม่
+npm run logo:trace -- "<ไฟล์สัญลักษณ์ใหม่.svg>"   # เปลี่ยนแบบโลโก้ (แปลงรูปเป็นเวกเตอร์ 2 สี)
+```
+
 ## ทีมประสานงาน
 
 - `npm run checklist` → [docs/angkhang-contact-checklist.xlsx](docs/angkhang-contact-checklist.xlsx) รายชื่อที่พัก ช่องทางติดต่อ ตำแหน่ง

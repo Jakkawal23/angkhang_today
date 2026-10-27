@@ -8,7 +8,9 @@
     "build": "astro check && astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "checklist": "node scripts/export-checklist.mjs"
+    "checklist": "node scripts/export-checklist.mjs",
+    "logo": "node scripts/build-logo.mjs",
+    "logo:trace": "node scripts/trace-logo.mjs"
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
@@ -22,7 +24,10 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
     "@astrojs/compiler-binding-wasm32-wasi": "^0.5.1",
+    "@fontsource/nunito": "^5.2.7",
     "exceljs": "^4.4.0",
+    "opentype.js": "^1.3.4",
+    "potrace": "^2.1.8",
     "typescript": "^6.0.3"
   }
 }

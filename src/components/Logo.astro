@@ -1,22 +1,22 @@
 ---
+// โลโก้ Angkhang Today — สัญลักษณ์จาก src/data/logo-traced.json (ชุดเดียวกับไฟล์ใน public/brand/)
+import logo from '../data/logo-traced.json';
+
 interface Props {
   class?: string;
   light?: boolean;
 }
 const { class: className = '', light = false } = Astro.props;
+const main = light ? '#FFFFFF' : logo.green.color;
 ---
 
 <a href="/" class:list={['flex items-center gap-2', className]} aria-label="Angkhang Today หน้าแรก">
-  <svg viewBox="0 0 40 40" class="h-9 w-9 shrink-0" aria-hidden="true">
-    <rect width="40" height="40" rx="11" fill="#1d523d"></rect>
-    <circle cx="27" cy="13" r="4.5" fill="#ec8aa8"></circle>
-    <path d="M4 31 L15 15 L22 24 L26 19 L36 31 Z" fill="#afd5c0"></path>
-    <path d="M4 31 L15 15 L19 21 L13 31 Z" fill="#ffffff" opacity=".85"></path>
+  <svg viewBox={`0 0 ${logo.width} ${logo.height}`} class="h-10 w-auto shrink-0" aria-hidden="true">
+    <path fill-rule="evenodd" fill={main} d={logo.green.d}></path>
+    <path fill-rule="evenodd" fill={logo.pink.color} d={logo.pink.d}></path>
   </svg>
-  <span class="leading-tight">
-    <span class:list={['block text-base font-extrabold tracking-tight', light ? 'text-white' : 'text-pine-800']}>
-      Angkhang<span class="text-sakura-500">.</span>Today
-    </span>
-    <span class:list={['text-[11px]', light ? 'block text-pine-100' : 'hidden text-slate-500 sm:block']}>อ่างขาง ทูเดย์ · หาที่พักดอยอ่างขาง</span>
+  <span class="leading-none">
+    <span class="block text-[15px] font-extrabold tracking-tight" style={`color:${light ? '#FFFFFF' : logo.green.color}`}>Angkhang</span>
+    <span class="block text-[15px] font-extrabold tracking-tight" style={`color:${light ? '#F4B6CA' : logo.pink.color}`}>Today</span>
   </span>
 </a>
