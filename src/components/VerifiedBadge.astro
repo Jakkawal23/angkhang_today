@@ -1,0 +1,31 @@
+---
+import Icon from './Icon.astro';
+
+interface Props {
+  verified: boolean;
+  size?: 'sm' | 'md';
+}
+const { verified, size = 'sm' } = Astro.props;
+const cls = size === 'sm' ? 'px-2 py-0.5 text-[11px]' : 'px-3 py-1 text-sm';
+const icon = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4';
+---
+
+{
+  verified ? (
+    <span
+      class:list={['inline-flex items-center gap-1 rounded-full bg-pine-700 font-semibold text-white', cls]}
+      title="ช่องทางติดต่อและบัญชีรับโอนได้รับการตรวจสอบแล้ว"
+    >
+      <Icon name="shield-check" class={icon} strokeWidth={2.2} />
+      การันตีช่องทางติดต่อ
+    </span>
+  ) : (
+    <span
+      class:list={['inline-flex items-center gap-1 rounded-full bg-amber-100 font-semibold text-amber-800', cls]}
+      title="ยังไม่ได้ตรวจสอบช่องทางติดต่อ โปรดระมัดระวังก่อนโอนเงิน"
+    >
+      <Icon name="alert" class={icon} strokeWidth={2.2} />
+      ยังไม่ได้ตรวจสอบ
+    </span>
+  )
+}

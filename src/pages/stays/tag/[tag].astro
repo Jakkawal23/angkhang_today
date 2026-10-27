@@ -1,0 +1,34 @@
+---
+import StayListing from '../../../components/StayListing.astro';
+import { AMENITIES, AMENITY_KEYS, type Amenity } from '../../../data/amenities';
+import { getStays, type Stay } from '../../../lib/stays';
+
+export async function getStaticPaths() {
+  const stays = await getStays();
+  return AMENITY_KEYS.map((tag) => ({
+    params: { tag },
+    props: { tag, stays: stays.filter((s) => s.data.amenities.includes(tag)) },
+  }));
+}
+
+interface Props {
+  tag: Amenity;
+  stays: Stay[];
+}
+const { tag, stays } = Astro.props;
+const a = AMENITIES[tag];
+---
+
+<StayListing
+  title={`${a.seoTitle} (${stays.length} แห่ง)`}
+  description={`รวม${a.seoTitle} พร้อมราคา โซน จำนวนคนที่รองรับ และช่องทางติดต่อเจ้าของที่พักที่ตรวจสอบแล้ว`}
+  heading={`${a.icon} ${a.seoTitle}`}
+  intro={`รวมที่พักบนดอยอ่างขางที่มี "${a.label}" ทั้งหมด ${stays.length} แห่ง เรียงตามที่พักที่การันตีช่องทางติดต่อก่อน กดเข้าไปดูรายละเอียดและทักถามห้องว่างกับเจ้าของได้โดยตรง`}
+  stays={stays}
+  crumbs={[
+    { name: 'หน้าแรก', href: '/' },
+    { name: 'ที่พักดอยอ่างขาง', href: '/stays' },
+    { name: a.label, href: `/stays/tag/${tag}` },
+  ]}
+  searchHref={`/stays?amenity=${tag}`}
+/>

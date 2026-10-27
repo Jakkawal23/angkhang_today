@@ -1,0 +1,207 @@
+---
+// กล่องถามห้องว่าง (sidebar) — สร้างข้อความ วันที่ / จำนวนคน / ห้องที่สนใจ แล้วส่งผ่านช่องทางที่ที่พักมี
+// LINE OA = เปิดแชตพร้อมข้อความ / LINE ส่วนตัว = เพิ่มเพื่อน + คัดลอกข้อความให้ / ไม่มี LINE = Messenger / เพจ / โทร
+import Icon from './Icon.astro';
+import VerifiedBadge from './VerifiedBadge.astro';
+import { BRAND_COLORS } from '../lib/icons';
+import { cleanName, hasAnyContact, lineAddUrl, lineMessageBase, telUrl, type Stay } from '../lib/stays';
+
+interface Props {
+  stay: Stay;
+}
+const { stay } = Astro.props;
+const d = stay.data;
+const c = d.contacts;
+const line = c.line;
+const lineMsg = line ? lineMessageBase(line) : undefined;
+const lineHref = line ? lineAddUrl(line) : undefined;
+const anyContact = hasAnyContact(stay);
+---
+
+<div class="card scroll-mt-36 space-y-4 p-5" id="ask" data-ask data-name={cleanName(d.name)} data-line-msg={lineMsg ?? ''}>
+  <div class="flex items-center justify-between gap-2">
+    <h2 class="font-bold text-slate-900">ถามห้องว่าง</h2>
+    <VerifiedBadge verified={d.verified.status} />
+  </div>
+
+  <div class="grid grid-cols-2 gap-2">
+    <div>
+      <label class="label" for="ask-checkin">เช็กอิน</label>
+      <input id="ask-checkin" type="text" data-date="checkin" data-field="checkin" placeholder="วว/ดด/ปปปป" class="field px-2" />
+    </div>
+    <div>
+      <label class="label" for="ask-checkout">เช็กเอาท์</label>
+      <input id="ask-checkout" type="text" data-date="checkout" data-field="checkout" placeholder="วว/ดด/ปปปป" class="field px-2" />
+    </div>
+  </div>
+  <div class="grid grid-cols-[84px_1fr] gap-2">
+    <div>
+      <label class="label" for="ask-guests">จำนวนคน</label>
+      <input id="ask-guests" type="number" min="1" inputmode="numeric" class="field" data-field="guests" placeholder="2" />
+    </div>
+    <div>
+      <label class="label" for="ask-note">ห้องที่สนใจ / เพิ่มเติม</label>
+      <input id="ask-note" type="text" class="field" data-field="note" placeholder="เช่น ห้องครอบครัว 2 ห้อง" />
+    </div>
+  </div>
+  <div>
+    <label class="label" for="ask-message">ข้อความที่จะส่ง (แก้ไขได้)</label>
+    <textarea id="ask-message" rows="6" class="field text-xs leading-relaxed" data-message></textarea>
+  </div>
+
+  <div class="grid gap-2">
+    {
+      line && lineMsg && (
+        <a data-line-msg-btn href={lineHref} target="_blank" rel="noopener" class="btn-line w-full">
+          <Icon name="line" class="h-5 w-5" />
+          ส่งข้อความทาง LINE
+        </a>
+      )
+    }
+    {
+      line && !lineMsg && (
+        <a data-copy-then-open href={lineHref} target="_blank" rel="noopener" class="btn-line w-full">
+          <Icon name="line" class="h-5 w-5" />
+          {line.type === 'personal' ? 'เพิ่มเพื่อน LINE (ส่วนตัว)' : 'เพิ่มเพื่อน LINE'}
+        </a>
+      )
+    }
+    {
+      !line && c.messenger && (
+        <a data-copy-then-open href={c.messenger} target="_blank" rel="noopener" class="btn w-full text-white hover:brightness-95" style={`background:${BRAND_COLORS.facebook}`}>
+          <Icon name="message" class="h-5 w-5" />
+          ทักทาง Messenger
+        </a>
+      )
+    }
+    {
+      !line && !c.messenger && c.facebook && (
+        <a data-copy-then-open href={c.facebook} target="_blank" rel="noopener nofollow" class="btn w-full text-white hover:brightness-95" style={`background:${BRAND_COLORS.facebook}`}>
+          <Icon name="facebook" class="h-5 w-5" />
+          ทักทางเพจ Facebook
+        </a>
+      )
+    }
+    <button type="button" data-copy class="btn-outline w-full">
+      <Icon name="copy" class="h-4 w-4" />
+      <span data-copy-label>คัดลอกข้อความ</span>
+    </button>
+    {
+      c.phones.slice(0, 1).map((p) => (
+        <a href={telUrl(p.number)} class="btn-outline w-full">
+          <Icon name="phone" class="h-4 w-4" />
+          โทร {p.number}
+        </a>
+      ))
+    }
+    <p class="text-xs text-slate-500" data-copy-hint hidden>คัดลอกข้อความให้แล้ว วางในแชตได้เลย</p>
+    {line?.type === 'personal' && <p class="text-xs text-slate-500">LINE ส่วนตัวส่งข้อความอัตโนมัติไม่ได้ ระบบจะคัดลอกข้อความให้ กดเพิ่มเพื่อนแล้ววางในแชต</p>}
+    {!line && anyContact && <p class="text-xs text-slate-500">ที่พักนี้ไม่มี LINE ในระบบ ติดต่อผ่านช่องทางด้านบนแทน</p>}
+  </div>
+
+  {
+    !anyContact && (
+      <p class="flex gap-2 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
+        <Icon name="info" class="h-4 w-4 shrink-0" />
+        ยังไม่มีช่องทางติดต่อของที่พักนี้ในระบบ คัดลอกข้อความไว้ใช้เมื่อหาช่องทางติดต่อได้ หรือแจ้งข้อมูลให้เราที่หน้า "สำหรับเจ้าของที่พัก"
+      </p>
+    )
+  }
+  {
+    !d.verified.status && anyContact && (
+      <p class="flex gap-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-900">
+        <Icon name="alert" class="h-4 w-4 shrink-0" />
+        <span>
+          ทีมงานยังไม่ได้ตรวจสอบช่องทางติดต่อของที่พักนี้ ก่อนโอนเงินโปรดอ่าน{' '}
+          <a class="underline" href="/safety">
+            วิธีสังเกตเพจปลอม
+          </a>
+        </span>
+      </p>
+    )
+  }
+  <p class="text-xs text-slate-500">Angkhang Today ไม่รับเงินแทนที่พัก การจองและชำระเงินทำกับเจ้าของที่พักโดยตรง</p>
+</div>
+
+<script>
+  import { initDatePickers } from '../scripts/datepicker';
+
+  // YYYY-MM-DD -> DD/MM/YYYY (ค.ศ.)
+  const fmt = (s: string) => (s ? s.split('-').reverse().join('/') : '');
+
+  for (const box of Array.from(document.querySelectorAll<HTMLElement>('[data-ask]'))) {
+    const field = (k: string) => box.querySelector<HTMLInputElement>(`input[data-field="${k}"]`)!;
+    const msgEl = box.querySelector<HTMLTextAreaElement>('[data-message]')!;
+    const lineMsgBtn = box.querySelector<HTMLAnchorElement>('[data-line-msg-btn]');
+    const copyBtn = box.querySelector<HTMLButtonElement>('[data-copy]')!;
+    const copyLabel = box.querySelector<HTMLElement>('[data-copy-label]')!;
+    const copyHint = box.querySelector<HTMLElement>('[data-copy-hint]')!;
+    let edited = false;
+
+    // เติมค่าจากหน้าค้นหา (?checkin=&checkout=&guests=)
+    const p = new URLSearchParams(location.search);
+    for (const k of ['checkin', 'checkout', 'guests']) if (p.get(k)) field(k).value = p.get(k)!;
+    initDatePickers(box);
+
+    function build() {
+      const ci = field('checkin').value;
+      const co = field('checkout').value;
+      const g = field('guests').value;
+      const note = field('note').value.trim();
+      const nights = ci && co ? Math.round((+new Date(co) - +new Date(ci)) / 86400000) : 0;
+      return [
+        `สวัสดีค่ะ/ครับ สนใจที่พัก "${box.dataset.name}" (เห็นข้อมูลจาก Angkhang Today)`,
+        `วันที่เข้าพัก: ${ci ? `${fmt(ci)}${co ? ` – ${fmt(co)}` : ''}${nights > 0 ? ` (${nights} คืน)` : ''}` : '(ระบุวันที่)'}`,
+        `จำนวนผู้เข้าพัก: ${g || '…'} คน`,
+        note && `ห้องที่สนใจ / เพิ่มเติม: ${note}`,
+        'รบกวนสอบถามห้องว่างและราคาค่ะ/ครับ ขอบคุณค่ะ/ครับ',
+      ]
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    function sync() {
+      if (!edited) msgEl.value = build();
+      // LINE OA ที่รู้ ID เปิดแชตพร้อมข้อความได้
+      if (lineMsgBtn && box.dataset.lineMsg) lineMsgBtn.href = `${box.dataset.lineMsg}?${encodeURIComponent(msgEl.value)}`;
+    }
+
+    async function copy() {
+      try {
+        await navigator.clipboard.writeText(msgEl.value);
+        return true;
+      } catch {
+        msgEl.select();
+        return false;
+      }
+    }
+
+    box.querySelectorAll('input[data-field]').forEach((el) => {
+      el.addEventListener('input', () => ((edited = false), sync()));
+      el.addEventListener('change', () => ((edited = false), sync()));
+    });
+    msgEl.addEventListener('input', () => ((edited = true), sync()));
+    copyBtn.addEventListener('click', async () => {
+      await copy();
+      copyLabel.textContent = 'คัดลอกแล้ว';
+      setTimeout(() => (copyLabel.textContent = 'คัดลอกข้อความ'), 2000);
+    });
+    // ช่องทางที่ส่งข้อความอัตโนมัติไม่ได้: คัดลอกให้ก่อนเปิดแอป
+    box.querySelectorAll<HTMLAnchorElement>('[data-copy-then-open]').forEach((a) =>
+      a.addEventListener('click', () => {
+        copy();
+        copyHint.hidden = false;
+      }),
+    );
+
+    // ปุ่ม "ถามห้องนี้" บนการ์ดห้องพัก
+    document.querySelectorAll<HTMLElement>('[data-ask-room]').forEach((btn) =>
+      btn.addEventListener('click', () => {
+        field('note').value = btn.dataset.askRoom!;
+        edited = false;
+        sync();
+      }),
+    );
+    sync();
+  }
+</script>

@@ -1,0 +1,150 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { breadcrumbLd } from '../lib/seo';
+import Icon from '../components/Icon.astro';
+import { iconSvg } from '../lib/icons';
+import { getStays } from '../lib/stays';
+import { fbKey, lineKey, phoneKey } from '../lib/contact-keys';
+
+// สร้างดัชนีช่องทางติดต่อตอน build (ข้อมูลเดียวกับที่แสดงบนหน้าที่พักอยู่แล้ว)
+const stays = await getStays();
+
+const index = stays.flatMap((s) => {
+  const base = { id: s.id, name: s.data.name, verified: s.data.verified.status };
+  const c = s.data.contacts;
+  return [
+    ...c.phones.map((p) => ({ ...base, kind: 'phone', label: `เบอร์โทร ${p.number}`, key: phoneKey(p.number) })),
+    ...(c.line?.id ? [{ ...base, kind: 'line', label: `LINE ${c.line.id}`, key: lineKey(c.line.id) }] : []),
+    ...(c.facebook ? [{ ...base, kind: 'facebook', label: 'เพจ Facebook', key: fbKey(c.facebook) }] : []),
+    ...s.data.bankAccounts.map((b) => ({
+      ...base,
+      kind: 'bank',
+      label: `บัญชี ${b.bank} ชื่อ ${b.accountName}`,
+      key: phoneKey(b.accountNumber),
+    })),
+  ];
+});
+
+const crumbs = [
+  { name: 'หน้าแรก', href: '/' },
+  { name: 'ตรวจสอบก่อนโอน', href: '/verify' },
+];
+// ไอคอนสำหรับผลตรวจสอบที่สร้างฝั่ง client
+const icons = {
+  ok: iconSvg('shield-check', 'h-6 w-6 shrink-0'),
+  warn: iconSvg('shield-alert', 'h-6 w-6 shrink-0'),
+  no: iconSvg('shield-x', 'h-6 w-6 shrink-0'),
+};
+---
+
+<Base
+  title="ตรวจสอบเบอร์ LINE เพจ เลขบัญชีที่พักอ่างขาง ก่อนโอนมัดจำ"
+  description="วางเบอร์โทร LINE ID ลิงก์เพจ Facebook หรือเลขบัญชีที่ได้รับ เพื่อตรวจว่าเป็นช่องทางของที่พักดอยอ่างขางจริงหรือไม่ ป้องกันมิจฉาชีพและเพจปลอม"
+  jsonLd={breadcrumbLd(crumbs)}
+>
+  <div class="container-page max-w-3xl space-y-6 py-8">
+    <Breadcrumbs items={crumbs} />
+    <header class="space-y-2">
+      <h1 class="flex items-center gap-3 text-2xl font-extrabold text-slate-900 sm:text-3xl">
+        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pine-700 text-white">
+          <Icon name="shield-check" class="h-6 w-6" />
+        </span>
+        ตรวจสอบก่อนโอนมัดจำ
+      </h1>
+      <p class="text-slate-600">
+        มีคนทักมาเสนอห้องพัก หรือส่งเลขบัญชีให้โอน? วางข้อมูลลงด้านล่าง ระบบจะเทียบกับช่องทางติดต่อที่ทีมงานตรวจสอบแล้ว
+      </p>
+    </header>
+
+    <form id="verify-form" class="card flex flex-col gap-2 p-4 sm:flex-row" role="search">
+      <label for="verify-q" class="sr-only">เบอร์โทร LINE ID ลิงก์เพจ หรือเลขบัญชี</label>
+      <input id="verify-q" name="q" required autocomplete="off" class="field flex-1" placeholder="เช่น 081-234-5678, @linename, facebook.com/..., 123-4-56789-0" />
+      <button class="btn-primary">ตรวจสอบ</button>
+    </form>
+
+    <div id="verify-result" aria-live="polite"></div>
+
+    <section class="card space-y-3 p-5 text-sm text-slate-700">
+      <h2 class="font-bold text-slate-900">ผลตรวจสอบหมายถึงอะไร?</h2>
+      <p class="flex gap-2"><Icon name="shield-check" class="h-5 w-5 shrink-0 text-pine-600" /><span><strong>ตรงกับที่พักที่การันตี</strong> — ช่องทางนี้เป็นของเจ้าของที่พักจริง ตามที่ทีมงานตรวจสอบไว้</span></p>
+      <p class="flex gap-2"><Icon name="shield-alert" class="h-5 w-5 shrink-0 text-amber-600" /><span><strong>พบในระบบ แต่ยังไม่การันตี</strong> — ที่พักแจ้งข้อมูลนี้ แต่ทีมงานยังไม่ได้ยืนยัน ควรระวัง</span></p>
+      <p class="flex gap-2"><Icon name="shield-x" class="h-5 w-5 shrink-0 text-red-600" /><span><strong>ไม่พบในระบบ</strong> — ไม่ได้แปลว่าเป็นมิจฉาชีพเสมอไป แต่ให้ตรวจสอบเพิ่มก่อนโอน เช่น ติดต่อกลับผ่านช่องทางบนหน้าที่พักของเรา</span></p>
+      <a href="/safety" class="inline-flex items-center gap-1 font-semibold text-pine-700 hover:underline">อ่านวิธีสังเกตเพจที่พักปลอม <Icon name="arrow-right" class="h-4 w-4" /></a>
+    </section>
+  </div>
+  <script is:inline type="application/json" id="verify-index" set:html={JSON.stringify({ index, icons })} />
+</Base>
+
+<script>
+  import { fbKey, lineKey, phoneKey } from '../lib/contact-keys';
+
+  interface Entry {
+    id: string;
+    name: string;
+    verified: boolean;
+    kind: 'phone' | 'line' | 'facebook' | 'bank';
+    label: string;
+    key: string;
+  }
+  const { index, icons }: { index: Entry[]; icons: Record<'ok' | 'warn' | 'no', string> } = JSON.parse(
+    document.getElementById('verify-index')!.textContent || '{}',
+  );
+  const form = document.getElementById('verify-form') as HTMLFormElement;
+  const input = document.getElementById('verify-q') as HTMLInputElement;
+  const out = document.getElementById('verify-result')!;
+
+  const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+
+  function lookup(raw: string): Entry[] {
+    const q = raw.trim();
+    if (!q) return [];
+    if (/facebook\.com|fb\.com/i.test(q)) return index.filter((e) => e.kind === 'facebook' && e.key === fbKey(q));
+    if (/^[\d\s\-+().]+$/.test(q)) return index.filter((e) => (e.kind === 'phone' || e.kind === 'bank') && e.key === phoneKey(q));
+    return index.filter((e) => (e.kind === 'line' && e.key === lineKey(q)) || (e.kind === 'facebook' && e.key === fbKey(q)));
+  }
+
+  function render(q: string) {
+    const hits = lookup(q);
+    if (!q.trim()) {
+      out.innerHTML = '';
+      return;
+    }
+    if (!hits.length) {
+      out.innerHTML = `
+        <div class="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-900">
+          <p class="flex items-center gap-2 text-lg font-bold">${icons.no} ไม่พบ "${esc(q)}" ในระบบ</p>
+          <p class="mt-1 text-sm">ช่องทางนี้ไม่ตรงกับที่พักใดที่เรามีข้อมูล <strong>อย่าเพิ่งโอนเงิน</strong> ให้ค้นหาชื่อที่พักบนเว็บเรา แล้วติดต่อกลับผ่านเบอร์หรือ LINE ที่แสดงบนหน้านั้น</p>
+          <a href="/stays?q=" class="mt-3 inline-block text-sm font-semibold underline">ค้นหาชื่อที่พัก</a>
+        </div>`;
+      return;
+    }
+    out.innerHTML = hits
+      .map((h) =>
+        h.verified
+          ? `<div class="mb-3 rounded-2xl border border-pine-300 bg-pine-50 p-5 text-pine-900">
+              <p class="flex items-center gap-2 text-lg font-bold">${icons.ok} ตรงกับที่พักที่การันตีแล้ว</p>
+              <p class="mt-1">${esc(h.label)} เป็นช่องทางของ <a class="font-semibold underline" href="/stays/${h.id}">${esc(h.name)}</a></p>
+              <p class="mt-2 text-xs">โอนเงินเฉพาะบัญชีที่ชื่อตรงกับที่แสดงบนหน้าที่พักเท่านั้น</p>
+            </div>`
+          : `<div class="mb-3 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-amber-900">
+              <p class="flex items-center gap-2 text-lg font-bold">${icons.warn} พบในระบบ แต่ยังไม่ได้การันตี</p>
+              <p class="mt-1">${esc(h.label)} ตรงกับข้อมูลของ <a class="font-semibold underline" href="/stays/${h.id}">${esc(h.name)}</a> แต่ทีมงานยังไม่ได้ตรวจสอบ</p>
+            </div>`,
+      )
+      .join('');
+  }
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    render(input.value);
+    // เก็บคำค้นใน URL เฉพาะ path ไม่ส่งออกนอกเว็บ (ตรวจสอบในเบราว์เซอร์ทั้งหมด)
+    history.replaceState(null, '', `?q=${encodeURIComponent(input.value.trim())}`);
+  });
+
+  const initial = new URLSearchParams(location.search).get('q');
+  if (initial) {
+    input.value = initial;
+    render(initial);
+  }
+</script>

@@ -1,0 +1,138 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Noto Sans Thai', 'Noto Sans', ui-sans-serif, system-ui, sans-serif;
+
+  /* สีป่าสนบนดอย */
+  --color-pine-50: #eef6f1;
+  --color-pine-100: #d6eadf;
+  --color-pine-200: #afd5c0;
+  --color-pine-300: #7fb99a;
+  --color-pine-500: #2f7a57;
+  --color-pine-600: #24654a;
+  --color-pine-700: #1d523d;
+  --color-pine-800: #173f30;
+  --color-pine-900: #0f2c21;
+
+  /* สีดอกนางพญาเสือโคร่ง (ซากุระดอย) */
+  --color-sakura-50: #fdf1f5;
+  --color-sakura-100: #fbdde7;
+  --color-sakura-400: #ec8aa8;
+  --color-sakura-500: #df6890;
+  --color-sakura-600: #c64b75;
+
+  --color-mist: #f5f7f6;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: var(--color-mist);
+    color: var(--color-slate-800);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-pine-500);
+    outline-offset: 2px;
+  }
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition active:scale-[.98] disabled:opacity-50;
+}
+
+@layer components {
+  .container-page {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6;
+  }
+  .btn-primary {
+    @apply btn bg-pine-700 text-white hover:bg-pine-800;
+  }
+  .btn-outline {
+    @apply btn border border-slate-300 bg-white text-slate-700 hover:border-pine-500 hover:text-pine-700;
+  }
+  .btn-line {
+    @apply btn bg-[#06C755] text-white hover:brightness-95;
+  }
+  .field {
+    @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none focus:border-pine-500 focus:ring-2 focus:ring-pine-100;
+  }
+  .label {
+    @apply mb-1 block text-xs font-semibold text-slate-500;
+  }
+  .card {
+    @apply rounded-2xl border border-slate-200 bg-white;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700;
+  }
+  .section-title {
+    @apply text-xl font-bold text-slate-900 sm:text-2xl;
+  }
+  .prose-content {
+    @apply space-y-4 leading-relaxed text-slate-700;
+  }
+  .prose-content h2 {
+    @apply pt-2 text-lg font-bold text-slate-900;
+  }
+  .prose-content h3 {
+    @apply font-semibold text-slate-900;
+  }
+  .prose-content ul {
+    @apply list-disc space-y-1 pl-5;
+  }
+  .prose-content ol {
+    @apply list-decimal space-y-1 pl-5;
+  }
+  .prose-content a {
+    @apply text-pine-700 underline;
+  }
+  .prose-content strong {
+    @apply text-slate-900;
+  }
+}
+
+/* ตัวกรองแบบ chip ที่ใช้ checkbox ซ่อนไว้ */
+.chip-toggle:has(input:checked) {
+  border-color: var(--color-pine-500);
+  background: var(--color-pine-50);
+  color: var(--color-pine-800);
+  font-weight: 600;
+}
+
+/* ช่องวันที่ (flatpickr alt input) */
+.field[readonly] {
+  cursor: pointer;
+  background-color: #fff;
+}
+
+/* ธีมปฏิทิน flatpickr ให้เข้ากับเว็บ */
+.flatpickr-calendar {
+  font-family: var(--font-sans);
+  border-radius: 1rem;
+  box-shadow: 0 12px 32px rgb(15 44 33 / 0.18);
+}
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+  background: var(--color-pine-700);
+  border-color: var(--color-pine-700);
+}
+.flatpickr-day.today {
+  border-color: var(--color-sakura-400);
+}
+.flatpickr-day:hover {
+  background: var(--color-pine-50);
+}
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month .flatpickr-monthDropdown-months {
+  font-weight: 600;
+}
+
+/* เว้นที่ให้ header + แถบเมนูในหน้า เวลากดลิงก์ไปยังหัวข้อ */
+[data-section] {
+  scroll-margin-top: 8.5rem;
+}

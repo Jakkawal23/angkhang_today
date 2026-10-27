@@ -1,0 +1,93 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import FaqList from '../components/FaqList.astro';
+import { breadcrumbLd, faqLd } from '../lib/seo';
+import { SITE } from '../data/site';
+
+const crumbs = [
+  { name: 'หน้าแรก', href: '/' },
+  { name: 'วิธีสังเกตเพจที่พักปลอม', href: '/safety' },
+];
+
+const signs = [
+  { t: 'ราคาถูกผิดปกติ', d: 'โดยเฉพาะช่วงหน้าหนาวหรือวันหยุดยาวที่ห้องเต็มเกือบทุกที่ ถ้ามีคนบอกว่า "ว่าง ลดพิเศษ" ให้ระวัง' },
+  { t: 'เร่งให้โอนทันที', d: 'อ้างว่ามีคนรอจองต่อ ต้องโอนภายใน 10–30 นาที เพื่อไม่ให้คุณมีเวลาตรวจสอบ' },
+  { t: 'ชื่อบัญชีไม่ตรงกับที่พัก', d: 'บัญชีรับโอนเป็นชื่อบุคคลที่ไม่เกี่ยวข้องกับที่พักหรือเจ้าของ (บัญชีม้า)' },
+  { t: 'ทักมาก่อน / ตอบในคอมเมนต์', d: 'มิจฉาชีพมักไล่ตอบโพสต์หาห้องในกลุ่ม แล้วทักแชตส่วนตัวพร้อมรูปห้องสวย ๆ' },
+  { t: 'เพจใหม่ ชื่อคล้ายของจริง', d: 'ดูความโปร่งใสของเพจ (Page Transparency) ว่าสร้างเมื่อไหร่ เปลี่ยนชื่อกี่ครั้ง ผู้ติดตามน้อยผิดปกติ หรือรีวิวน้อย' },
+  { t: 'ไม่ยอมโทรคุย / วิดีโอคอล', d: 'เจ้าของที่พักจริงยินดีให้โทรสอบถามหรือขอดูห้องผ่านวิดีโอคอล' },
+];
+
+const faqs = [
+  {
+    q: 'จะตรวจสอบว่าเพจที่พักอ่างขางเป็นของจริงได้อย่างไร?',
+    a: 'นำเบอร์โทร LINE ลิงก์เพจ หรือเลขบัญชีที่ได้รับ มาตรวจในหน้า "ตรวจสอบก่อนโอน" ของ Angkhang Today และโอนเงินเฉพาะบัญชีที่ชื่อตรงกับที่แสดงบนหน้าที่พักที่มีเครื่องหมายการันตีเท่านั้น',
+  },
+  {
+    q: 'โอนเงินจองที่พักให้มิจฉาชีพไปแล้วต้องทำอย่างไร?',
+    a: 'แจ้งธนาคารของคุณทันทีเพื่ออายัดบัญชีปลายทาง โทรสายด่วน 1441 และแจ้งความออนไลน์ที่ thaipoliceonline.go.th พร้อมเก็บสลิป แชต และลิงก์เพจไว้เป็นหลักฐาน',
+  },
+];
+---
+
+<Base
+  title="วิธีสังเกตเพจที่พักปลอม ก่อนโอนมัดจำที่พักอ่างขาง"
+  description="6 สัญญาณเตือนเพจที่พักปลอมและมิจฉาชีพหลอกโอนมัดจำ พร้อมขั้นตอนตรวจสอบก่อนโอน และสิ่งที่ต้องทำถ้าโดนโกง"
+  ogType="article"
+  jsonLd={[breadcrumbLd(crumbs), faqLd(faqs)]}
+>
+  <article class="container-page max-w-3xl space-y-8 py-8">
+    <Breadcrumbs items={crumbs} />
+    <header class="space-y-3">
+      <h1 class="text-2xl font-extrabold text-slate-900 sm:text-3xl">วิธีสังเกตเพจที่พักปลอม ก่อนโอนมัดจำ</h1>
+      <p class="rounded-xl border-l-4 border-pine-600 bg-white p-4 text-slate-700">
+        <strong>สรุปสั้น:</strong> อย่าโอนเงินให้ใครที่ทักมาก่อน ตรวจว่าชื่อบัญชีตรงกับเจ้าของที่พัก และติดต่อกลับผ่านช่องทางที่ตรวจสอบแล้วเท่านั้น
+        ใช้หน้า <a href="/verify" class="font-semibold text-pine-700 underline">ตรวจสอบก่อนโอน</a> ช่วยเช็กได้ในไม่กี่วินาที
+      </p>
+    </header>
+
+    <section>
+      <h2 class="mb-4 text-xl font-bold text-slate-900">6 สัญญาณเตือนเพจที่พักปลอม</h2>
+      <ol class="grid gap-3 sm:grid-cols-2">
+        {
+          signs.map((s, i) => (
+            <li class="card p-4">
+              <p class="font-bold text-slate-900">
+                <span class="mr-1 text-sakura-500">{i + 1}.</span>
+                {s.t}
+              </p>
+              <p class="mt-1 text-sm text-slate-600">{s.d}</p>
+            </li>
+          ))
+        }
+      </ol>
+    </section>
+
+    <section class="card space-y-3 p-5">
+      <h2 class="text-xl font-bold text-slate-900">ขั้นตอนจองที่พักให้ปลอดภัย</h2>
+      <ol class="list-decimal space-y-2 pl-5 text-slate-700">
+        <li>ค้นหาที่พักบน {SITE.name} แล้วเลือกที่มีเครื่องหมาย <strong>การันตีช่องทางติดต่อ</strong></li>
+        <li>ทักหาเจ้าของผ่านเบอร์หรือ LINE ที่แสดงบนหน้าที่พัก (ไม่ใช่ช่องทางที่มีคนส่งมาให้)</li>
+        <li>ก่อนโอน เทียบชื่อบัญชีกับที่แสดงบนหน้าที่พัก หรือวางเลขบัญชีในหน้าตรวจสอบ</li>
+        <li>ขอใบยืนยันการจองหรือข้อความยืนยันจากเจ้าของ และเก็บสลิปไว้</li>
+      </ol>
+    </section>
+
+    <section class="rounded-2xl bg-red-50 p-5 text-red-900">
+      <h2 class="text-xl font-bold">ถ้าโอนไปแล้วและสงสัยว่าโดนโกง</h2>
+      <ul class="mt-3 space-y-2">
+        <li>1. โทรหาธนาคารของคุณทันที ขออายัดบัญชีปลายทาง</li>
+        <li>2. โทร <a href="tel:1441" class="font-bold underline">1441</a> สายด่วนศูนย์ปฏิบัติการแก้ไขปัญหาอาชญากรรมออนไลน์</li>
+        <li>3. แจ้งความออนไลน์ที่ <a href="https://thaipoliceonline.go.th" target="_blank" rel="noopener" class="font-bold underline">thaipoliceonline.go.th</a></li>
+        <li>4. เก็บหลักฐานทั้งหมด: สลิป แชต ลิงก์เพจ ชื่อบัญชี</li>
+        <li>5. แจ้งเราทาง LINE {SITE.contact.line} เพื่อเตือนนักท่องเที่ยวคนอื่น</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2 class="mb-4 text-xl font-bold text-slate-900">คำถามที่พบบ่อย</h2>
+      <FaqList faqs={faqs} />
+    </section>
+  </article>
+</Base>

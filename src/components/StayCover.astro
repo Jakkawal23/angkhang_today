@@ -1,0 +1,46 @@
+---
+// รูปปกที่พัก; ถ้ายังไม่มีรูปจะแสดงภาพกราฟิกภูเขาแทน
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import { stayPhotos } from '../lib/images';
+import { STAY_TYPES } from '../data/stay-types';
+import type { Stay } from '../lib/stays';
+
+interface Props {
+  stay: Stay;
+  class?: string;
+  eager?: boolean;
+}
+const { stay, class: className = '', eager = false } = Astro.props;
+const photo = stayPhotos(stay.id, stay.data.name)[0];
+const img = stay.data.images[0];
+const t = STAY_TYPES[stay.data.type];
+// สีพื้นหลังต่างกันตามชื่อ เพื่อให้การ์ดไม่ซ้ำกัน
+const hues = [
+  ['#1d523d', '#7fb99a'],
+  ['#24654a', '#c64b75'],
+  ['#173f30', '#afd5c0'],
+  ['#2f7a57', '#ec8aa8'],
+];
+const [from, to] = hues[[...stay.id].reduce((n, c) => n + c.charCodeAt(0), 0) % hues.length];
+---
+
+<div class:list={['relative overflow-hidden bg-pine-100', className]}>
+  {
+    photo ? (
+      <Image src={photo.src} alt={photo.alt} widths={[480, 800, 1280]} sizes="(min-width: 1024px) 400px, 100vw" class="h-full w-full object-cover" loading={eager ? 'eager' : 'lazy'} />
+    ) : img ? (
+      <img src={img.src} alt={img.alt} class="h-full w-full object-cover" loading={eager ? 'eager' : 'lazy'} decoding="async" width="800" height="533" />
+    ) : (
+      <div class="flex h-full w-full items-end" style={`background:linear-gradient(160deg, ${from}, ${to})`} role="img" aria-label={`${t.label} ${stay.data.name}`}>
+        <svg viewBox="0 0 400 160" preserveAspectRatio="none" class="h-2/3 w-full" aria-hidden="true">
+          <path d="M0 160 L0 90 L70 40 L130 95 L200 30 L280 100 L340 60 L400 95 L400 160 Z" fill="rgba(255,255,255,.14)" />
+          <path d="M0 160 L0 120 L90 80 L170 125 L250 85 L330 125 L400 105 L400 160 Z" fill="rgba(255,255,255,.24)" />
+        </svg>
+        <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/15 p-4 text-white ring-1 ring-white/30 backdrop-blur-sm">
+          <Icon name={t.icon} class="h-9 w-9" strokeWidth={1.5} />
+        </span>
+      </div>
+    )
+  }
+</div>

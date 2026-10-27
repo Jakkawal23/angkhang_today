@@ -1,0 +1,39 @@
+---
+// แถบเมนูด้านล่างสำหรับมือถือ (กดง่ายด้วยนิ้วโป้ง)
+import Icon from './Icon.astro';
+import type { IconName } from '../lib/icons';
+
+const items: { href: string; label: string; icon: IconName }[] = [
+  { href: '/', label: 'หน้าแรก', icon: 'house' },
+  { href: '/stays', label: 'ค้นหา', icon: 'search' },
+  { href: '/zones', label: 'โซน', icon: 'map' },
+  { href: '/verify', label: 'ตรวจสอบ', icon: 'shield-check' },
+];
+const path = Astro.url.pathname;
+const active = (href: string) => (href === '/' ? path === '/' : path.startsWith(href));
+---
+
+<nav
+  class="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+  aria-label="เมนูด้านล่าง"
+>
+  <ul class="grid grid-cols-4">
+    {
+      items.map((item) => (
+        <li>
+          <a
+            href={item.href}
+            class:list={[
+              'flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium',
+              active(item.href) ? 'text-pine-700' : 'text-slate-500',
+            ]}
+            aria-current={active(item.href) ? 'page' : undefined}
+          >
+            <Icon name={item.icon} class="h-6 w-6" />
+            {item.label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</nav>

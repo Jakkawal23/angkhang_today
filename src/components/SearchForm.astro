@@ -1,0 +1,52 @@
+---
+// ฟอร์มค้นหาหน้าแรก: ส่งค่าไปหน้า /stays เป็น query string (แชร์ลิงก์ผลการค้นหาได้)
+import Icon from './Icon.astro';
+import ZoneSelect from './ZoneSelect.astro';
+import AreaSelect from './AreaSelect.astro';
+---
+
+<form
+  id="home-search"
+  action="/stays"
+  method="get"
+  class="card grid gap-3 p-4 shadow-xl sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1fr_.7fr_auto] lg:items-end"
+>
+  <div>
+    <label class="label" for="sf-area">เส้นทางขึ้นดอย / พื้นที่</label>
+    <AreaSelect id="sf-area" />
+  </div>
+  <div>
+    <label class="label" for="sf-zone">หมู่บ้าน</label>
+    <ZoneSelect id="sf-zone" />
+  </div>
+  <div>
+    <label class="label" for="sf-checkin">เช็กอิน</label>
+    <input id="sf-checkin" name="checkin" type="text" data-date="checkin" placeholder="วว/ดด/ปปปป" class="field" />
+  </div>
+  <div>
+    <label class="label" for="sf-checkout">เช็กเอาท์</label>
+    <input id="sf-checkout" name="checkout" type="text" data-date="checkout" placeholder="วว/ดด/ปปปป" class="field" />
+  </div>
+  <div>
+    <label class="label" for="sf-guests">จำนวนคน</label>
+    <input id="sf-guests" name="guests" type="number" min="1" max="200" inputmode="numeric" placeholder="เช่น 4" class="field" />
+  </div>
+  <button type="submit" class="btn-primary h-[42px] sm:col-span-2 lg:col-span-1">
+    <Icon name="search" class="h-4 w-4" strokeWidth={2.2} />
+    ค้นหาที่พัก
+  </button>
+</form>
+
+<script>
+  import { initDatePickers } from '../scripts/datepicker';
+
+  const form = document.getElementById('home-search') as HTMLFormElement;
+  initDatePickers(form);
+  // ไม่ส่งช่องว่างไปใน URL
+  form.addEventListener('submit', () => {
+    for (const el of Array.from(form.elements) as HTMLInputElement[]) if (el.name && !el.value) el.disabled = true;
+  });
+  window.addEventListener('pageshow', () => {
+    for (const el of Array.from(form.elements) as HTMLInputElement[]) el.disabled = false;
+  });
+</script>

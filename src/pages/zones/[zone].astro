@@ -1,0 +1,47 @@
+---
+import Icon from '../../components/Icon.astro';
+import StayListing from '../../components/StayListing.astro';
+import { AREAS } from '../../data/areas';
+import { getStays, getZones, mapUrl, type Stay, type Zone } from '../../lib/stays';
+
+export async function getStaticPaths() {
+  const [zones, stays] = await Promise.all([getZones(), getStays()]);
+  return zones.map((zone) => ({
+    params: { zone: zone.id },
+    props: { zone, stays: stays.filter((s) => s.data.zone.id === zone.id) },
+  }));
+}
+
+interface Props {
+  zone: Zone;
+  stays: Stay[];
+}
+const { zone, stays } = Astro.props;
+const z = zone.data;
+const area = AREAS[z.area];
+const heading = z.area === 'top' ? `ที่พัก${z.name} ดอยอ่างขาง` : `ที่พัก${z.name} (${area.short})`;
+const mapSearch = [z.name, z.subdistrict && `ต.${z.subdistrict}`, z.district && `อ.${z.district}`, 'เชียงใหม่'].filter(Boolean).join(' ');
+---
+
+<StayListing
+  title={`${heading} (${stays.length} แห่ง)`}
+  description={`รวม${heading} ${z.summary} พร้อมห้องพัก ราคา แผนที่ และช่องทางติดต่อ`}
+  heading={heading}
+  intro={z.description}
+  stays={stays}
+  crumbs={[
+    { name: 'หน้าแรก', href: '/' },
+    { name: area.short, href: `/routes/${z.area}` },
+    { name: z.name, href: `/zones/${zone.id}` },
+  ]}
+  searchHref={`/stays?area=${z.area}&zone=${zone.id}`}
+>
+  <div slot="extra" class="flex flex-wrap items-center gap-2 pt-1">
+    <a href={`/routes/${z.area}`} class="chip text-xs hover:border-pine-500"><Icon name={area.icon} class="h-3.5 w-3.5 text-pine-600" />{area.name}</a>
+    {z.goodFor.map((g) => <span class="chip text-xs"><Icon name="thumbs-up" class="h-3.5 w-3.5 text-pine-600" />{g}</span>)}
+    <a href={mapUrl(mapSearch)} target="_blank" rel="noopener" class="chip text-xs hover:border-pine-500">
+      <Icon name="map" class="h-3.5 w-3.5 text-pine-600" />
+      ดูแผนที่
+    </a>
+  </div>
+</StayListing>

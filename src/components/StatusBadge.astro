@@ -1,0 +1,22 @@
+---
+// ความสดของข้อมูล: open = ทีมงานยืนยันแล้ว / listed = พบประกาศบนเว็บจองล่าสุด / unconfirmed = ข้อมูลเก่า ยังไม่ยืนยัน
+import Icon from './Icon.astro';
+import type { Stay } from '../lib/stays';
+
+interface Props {
+  status: Stay['data']['status'];
+  class?: string;
+}
+const { status, class: cls = '' } = Astro.props;
+const map = {
+  open: { label: 'ยืนยันว่าเปิดให้บริการ', icon: 'circle-check', tone: 'bg-pine-50 text-pine-800 ring-pine-200' },
+  listed: { label: 'พบประกาศบนเว็บจองล่าสุด', icon: 'calendar', tone: 'bg-sky-50 text-sky-800 ring-sky-200' },
+  unconfirmed: { label: 'ยังไม่ยืนยันสถานะ (ข้อมูลเก่า)', icon: 'clock', tone: 'bg-slate-100 text-slate-600 ring-slate-200' },
+} as const;
+const s = map[status];
+---
+
+<span class:list={['inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1', s.tone, cls]}>
+  <Icon name={s.icon} class="h-3.5 w-3.5" />
+  {s.label}
+</span>

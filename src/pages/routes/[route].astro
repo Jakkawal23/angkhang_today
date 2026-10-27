@@ -1,0 +1,75 @@
+---
+// หน้าเส้นทางขึ้นดอย / พื้นที่บนดอย: วิธีเดินทาง + หมู่บ้านบนเส้นทาง + ที่พักทั้งหมด (SEO: "ที่พักเส้นทาง ... อ่างขาง")
+import Icon from '../../components/Icon.astro';
+import StayListing from '../../components/StayListing.astro';
+import { AREAS, AREA_KEYS, type Area } from '../../data/areas';
+import { getStays, getZones, type Stay, type Zone } from '../../lib/stays';
+
+export async function getStaticPaths() {
+  const [zones, stays] = await Promise.all([getZones(), getStays()]);
+  return AREA_KEYS.map((route) => {
+    const routeZones = zones.filter((z) => z.data.area === route);
+    const ids = new Set(routeZones.map((z) => z.id));
+    return { params: { route }, props: { route, zones: routeZones, stays: stays.filter((s) => ids.has(s.data.zone.id)) } };
+  });
+}
+
+interface Props {
+  route: Area;
+  zones: Zone[];
+  stays: Stay[];
+}
+const { route, zones, stays } = Astro.props;
+const a = AREAS[route];
+const isTop = route === 'top';
+const heading = isTop ? 'ที่พักบนดอยอ่างขาง' : `ที่พัก${a.name}`;
+const count = (id: string) => stays.filter((s) => s.data.zone.id === id).length;
+---
+
+<StayListing
+  title={`${heading} (${stays.length} แห่ง)`}
+  description={`${a.summary} รวมที่พัก ${stays.length} แห่ง แยกตามหมู่บ้าน พร้อมวิธีเดินทางและช่องทางติดต่อ`}
+  heading={heading}
+  intro={a.summary}
+  stays={stays}
+  crumbs={[
+    { name: 'หน้าแรก', href: '/' },
+    { name: 'เส้นทางและหมู่บ้าน', href: '/zones' },
+    { name: a.short, href: `/routes/${route}` },
+  ]}
+  searchHref={`/stays?area=${route}`}
+>
+  <div slot="extra" class="space-y-4 pt-2">
+    <div class="card p-4">
+      <h2 class="flex items-center gap-2 font-semibold text-slate-900">
+        <Icon name="route" class="h-5 w-5 text-pine-600" />
+        {isTop ? 'การเดินทาง' : 'วิธีเข้าเส้นทาง'}
+      </h2>
+      <ol class="mt-2 space-y-1.5 text-sm text-slate-700">
+        {
+          a.howTo.map((step, i) => (
+            <li class="flex gap-2">
+              <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-pine-700 text-[11px] font-bold text-white">{i + 1}</span>
+              {step}
+            </li>
+          ))
+        }
+      </ol>
+      {'note' in a && a.note && <p class="mt-3 flex gap-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-900"><Icon name="alert" class="h-4 w-4 shrink-0" />{a.note}</p>}
+    </div>
+    <div>
+      <p class="mb-2 text-sm font-semibold text-slate-700">{isTop ? 'หมู่บ้านและพื้นที่บนดอย' : 'หมู่บ้านบนเส้นทางนี้'}</p>
+      <div class="flex flex-wrap gap-2">
+        {
+          zones.map((z) => (
+            <a href={`/zones/${z.id}`} class="chip text-sm hover:border-pine-500">
+              <Icon name="map-pin" class="h-4 w-4 text-pine-600" />
+              {z.data.name}
+              <span class="text-xs text-slate-400">{count(z.id)}</span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</StayListing>

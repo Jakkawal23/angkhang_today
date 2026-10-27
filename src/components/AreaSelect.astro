@@ -1,0 +1,45 @@
+---
+// เลือกเส้นทางขึ้นดอย / พื้นที่ — ใช้คู่กับ ZoneSelect (ถ้าเลือกเส้นทาง รายชื่อหมู่บ้านจะเหลือเฉพาะบนเส้นทางนั้น)
+import { AREAS, AREA_KEYS } from '../data/areas';
+
+interface Props {
+  id: string;
+}
+const { id } = Astro.props;
+---
+
+<select id={id} name="area" class="field" data-area-select>
+  <option value="">ทุกเส้นทางและพื้นที่</option>
+  {AREA_KEYS.map((a) => <option value={a}>{AREAS[a].name}</option>)}
+</select>
+
+<script>
+  // จับคู่ area <-> zone ในฟอร์มเดียวกัน
+  for (const areaSel of Array.from(document.querySelectorAll<HTMLSelectElement>('[data-area-select]'))) {
+    const form = areaSel.form;
+    const zoneSel = form?.querySelector<HTMLSelectElement>('[data-zone-select]');
+    if (!zoneSel) continue;
+    const syncZones = () => {
+      const area = areaSel.value;
+      zoneSel.querySelectorAll<HTMLOptGroupElement>('optgroup').forEach((g) => {
+        const show = !area || g.dataset.area === area;
+        g.hidden = !show;
+        g.disabled = !show;
+      });
+      const opt = zoneSel.selectedOptions[0];
+      if (area && opt?.dataset.area && opt.dataset.area !== area) zoneSel.value = '';
+    };
+    areaSel.addEventListener('change', syncZones);
+    // เลือกหมู่บ้านก่อน -> ตั้งเส้นทางให้อัตโนมัติ
+    zoneSel.addEventListener('change', () => {
+      const a = zoneSel.selectedOptions[0]?.dataset.area;
+      if (a && areaSel.value !== a) {
+        areaSel.value = a;
+        syncZones();
+      }
+    });
+    // ให้หน้าอื่นเรียกซ้ำได้หลังตั้งค่าจาก URL
+    form!.addEventListener('area-sync', syncZones);
+    syncZones();
+  }
+</script>

@@ -1,0 +1,54 @@
+---
+import Logo from './Logo.astro';
+import { SITE } from '../data/site';
+import { getZones } from '../lib/stays';
+import { AREAS, AREA_KEYS } from '../data/areas';
+import { AMENITIES, type Amenity } from '../data/amenities';
+
+const zones = await getZones();
+const popular = (Object.keys(AMENITIES) as Amenity[]).filter((k) => AMENITIES[k].popular);
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-16 bg-pine-900 text-pine-100">
+  <div class="container-page grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="space-y-3">
+      <Logo light />
+      <p class="text-sm leading-relaxed text-pine-200">
+        รวมที่พักดอยอ่างขาง พร้อมช่องทางติดต่อที่ตรวจสอบแล้ว ติดต่อเจ้าของโดยตรง ไม่ผ่านคนกลาง ลดความเสี่ยงจากเพจปลอม
+      </p>
+    </div>
+    <div>
+      <h2 class="mb-3 text-sm font-bold text-white">ที่พักบนดอยอ่างขาง</h2>
+      <ul class="space-y-2 text-sm">
+        {zones.filter((z) => z.data.area === 'top').map((z) => <li><a class="hover:text-white" href={`/zones/${z.id}`}>ที่พัก{z.data.name}</a></li>)}
+      </ul>
+      <h2 class="mt-6 mb-3 text-sm font-bold text-white">ที่พักตามเส้นทางขึ้นดอย</h2>
+      <ul class="space-y-2 text-sm">
+        {AREA_KEYS.filter((a) => a !== 'top').map((a) => <li><a class="hover:text-white" href={`/routes/${a}`}>{AREAS[a].name}</a></li>)}
+      </ul>
+    </div>
+    <div>
+      <h2 class="mb-3 text-sm font-bold text-white">ค้นหายอดนิยม</h2>
+      <ul class="space-y-2 text-sm">
+        {popular.map((k) => <li><a class="hover:text-white" href={`/stays/tag/${k}`}>{AMENITIES[k].seoTitle}</a></li>)}
+      </ul>
+    </div>
+    <div>
+      <h2 class="mb-3 text-sm font-bold text-white">Angkhang Today</h2>
+      <ul class="space-y-2 text-sm">
+        <li><a class="hover:text-white" href="/verify">ตรวจสอบเบอร์ / LINE / บัญชี ก่อนโอน</a></li>
+        <li><a class="hover:text-white" href="/safety">วิธีสังเกตเพจที่พักปลอม</a></li>
+        <li><a class="hover:text-white" href="/faq">คำถามที่พบบ่อย</a></li>
+        <li><a class="hover:text-white" href="/for-owners">ลงข้อมูลที่พักฟรี</a></li>
+        <li><a class="hover:text-white" href="/about">เกี่ยวกับเรา</a></li>
+        <li>LINE: {SITE.contact.line}</li>
+      </ul>
+    </div>
+  </div>
+  <div class="border-t border-white/10">
+    <p class="container-page py-5 text-xs text-pine-300">
+      © {year} {SITE.name} · เราไม่ได้รับเงินจองแทนที่พัก โปรดโอนเงินเข้าบัญชีที่ตรงกับข้อมูลบนเว็บเท่านั้น
+    </p>
+  </div>
+</footer>

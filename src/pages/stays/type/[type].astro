@@ -1,0 +1,34 @@
+---
+import StayListing from '../../../components/StayListing.astro';
+import { STAY_TYPES, STAY_TYPE_KEYS, type StayType } from '../../../data/stay-types';
+import { getStays, type Stay } from '../../../lib/stays';
+
+export async function getStaticPaths() {
+  const stays = await getStays();
+  return STAY_TYPE_KEYS.map((type) => ({
+    params: { type },
+    props: { type, stays: stays.filter((s) => s.data.type === type) },
+  }));
+}
+
+interface Props {
+  type: StayType;
+  stays: Stay[];
+}
+const { type, stays } = Astro.props;
+const t = STAY_TYPES[type];
+---
+
+<StayListing
+  title={`${t.seoTitle} (${stays.length} แห่ง)`}
+  description={`รวม${t.seoTitle} ทุกโซน พร้อมราคา จำนวนคนที่รองรับ สิ่งอำนวยความสะดวก และช่องทางติดต่อที่ตรวจสอบแล้ว`}
+  heading={`${t.icon} ${t.seoTitle}`}
+  intro={`รวม${t.label}บนดอยอ่างขางทั้งหมด ${stays.length} แห่ง เปรียบเทียบราคาและโซน แล้วติดต่อเจ้าของที่พักได้โดยตรง`}
+  stays={stays}
+  crumbs={[
+    { name: 'หน้าแรก', href: '/' },
+    { name: 'ที่พักดอยอ่างขาง', href: '/stays' },
+    { name: t.label, href: `/stays/type/${type}` },
+  ]}
+  searchHref={`/stays?type=${type}`}
+/>

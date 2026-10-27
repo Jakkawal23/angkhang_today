@@ -1,0 +1,112 @@
+---
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import type { StayPhoto } from '../lib/images';
+import { PRICE_UNITS, UNIT_NOUN, type StayType } from '../data/stay-types';
+import { formatTHB, guestsText, type Room } from '../lib/stays';
+
+interface Props {
+  room: Room;
+  stayType: StayType;
+  seasons: { weekday: string; weekend: string; peak: string };
+  /** รูปจากโฟลเดอร์ src/assets/stays/<slug>/rooms/<n>/ */
+  photos?: StayPhoto[];
+}
+const { room: r, stayType, seasons, photos = [] } = Astro.props;
+const photo = photos[0];
+const img = r.images[0];
+const photoCount = photos.length || r.images.length;
+const hasSeasons = r.price?.weekend != null || r.price?.peak != null;
+const prices = r.price
+  ? [
+      { label: hasSeasons ? 'วันธรรมดา' : 'ราคา', hint: seasons.weekday, value: r.price.weekday },
+      { label: 'วันหยุด', hint: seasons.weekend, value: r.price.weekend },
+      { label: 'ช่วงพีค', hint: seasons.peak, value: r.price.peak },
+    ].filter((p) => p.value != null)
+  : [];
+---
+
+<article class="card overflow-hidden md:grid md:grid-cols-[220px_1fr]">
+  <div class="relative aspect-[16/9] bg-pine-50 md:aspect-auto">
+    {
+      photo ? (
+        <Image src={photo.src} alt={photo.alt} widths={[440, 660]} sizes="(min-width: 768px) 220px, 100vw" class="h-full w-full object-cover" loading="lazy" />
+      ) : img ? (
+        <img src={img.src} alt={img.alt} class="h-full w-full object-cover" loading="lazy" decoding="async" />
+      ) : (
+        <div class="flex h-full min-h-32 w-full items-center justify-center text-pine-300" role="img" aria-label={r.name}>
+          <Icon name={stayType === 'tent' ? 'tent' : 'bed-double'} class="h-12 w-12" strokeWidth={1.3} />
+        </div>
+      )
+    }
+    {
+      photoCount > 1 && (
+        <span class="absolute right-2 bottom-2 inline-flex items-center gap-1 rounded bg-black/60 px-1.5 py-0.5 text-[11px] text-white">
+          <Icon name="images" class="h-3.5 w-3.5" />
+          {photoCount}
+        </span>
+      )
+    }
+  </div>
+
+  <div class="space-y-3 p-4 sm:p-5">
+    <div class="flex flex-wrap items-start justify-between gap-2">
+      <h3 class="text-lg font-bold text-slate-900">{r.name}</h3>
+      {r.count && <span class="rounded-full bg-pine-50 px-2.5 py-0.5 text-xs font-semibold text-pine-700">มี {r.count} {UNIT_NOUN[stayType]}</span>}
+    </div>
+
+    <ul class="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-slate-600">
+      <li class="inline-flex items-center gap-1.5"><Icon name="users" class="h-4 w-4 text-pine-600" />พักได้ {guestsText(r)} คน</li>
+      {r.beds && <li class="inline-flex items-center gap-1.5"><Icon name="bed-double" class="h-4 w-4 text-pine-600" />{r.beds}</li>}
+      {r.size && <li class="inline-flex items-center gap-1.5"><Icon name="ruler" class="h-4 w-4 text-pine-600" />{r.size} ตร.ม.</li>}
+      {r.bathroom && <li class="inline-flex items-center gap-1.5"><Icon name="bath" class="h-4 w-4 text-pine-600" />{r.bathroom === 'private' ? 'ห้องน้ำในตัว' : 'ห้องน้ำรวม'}</li>}
+      {r.breakfast && <li class="inline-flex items-center gap-1.5"><Icon name="coffee" class="h-4 w-4 text-pine-600" />รวมอาหารเช้า</li>}
+    </ul>
+
+    {r.description && <p class="text-sm leading-relaxed text-slate-600">{r.description}</p>}
+
+    {
+      r.features.length > 0 && (
+        <ul class="grid gap-1 text-sm text-slate-700 sm:grid-cols-2">
+          {r.features.map((f) => (
+            <li class="flex items-start gap-1.5">
+              <Icon name="check" class="mt-0.5 h-4 w-4 shrink-0 text-pine-600" strokeWidth={2.2} />
+              {f}
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
+    <div class="flex flex-wrap items-end justify-between gap-3 border-t border-slate-100 pt-3">
+      {
+        prices.length ? (
+          <dl class="flex flex-wrap gap-x-5 gap-y-2">
+            {prices.map((p) => (
+              <div>
+                <dt class="text-xs text-slate-500" title={p.hint}>
+                  {p.label}
+                </dt>
+                <dd class="text-lg font-extrabold text-pine-800">{formatTHB(p.value!)}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <p class="text-lg font-bold text-slate-500">สอบถามราคา</p>
+        )
+      }
+      <a href="#ask" data-ask-room={r.name} class="btn-outline">
+        <Icon name="message" class="h-4 w-4" />
+        ถามห้องนี้
+      </a>
+    </div>
+    {
+      r.price && (
+        <p class="text-xs text-slate-500">
+          ราคา{PRICE_UNITS[r.unit]}
+          {r.extraBed && ` · ${r.extraBed}`}
+        </p>
+      )
+    }
+  </div>
+</article>

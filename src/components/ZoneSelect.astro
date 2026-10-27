@@ -1,0 +1,29 @@
+---
+// เลือกหมู่บ้าน: แยกกลุ่มตามพื้นที่ (บนดอย / เส้น 1249 / เส้น 1178 / เส้นหนองบัว)
+import { AREAS, AREA_KEYS } from '../data/areas';
+import { getZones } from '../lib/stays';
+
+interface Props {
+  id: string;
+  allLabel?: string;
+}
+const { id, allLabel = 'ทุกหมู่บ้าน' } = Astro.props;
+const zones = await getZones();
+---
+
+<select id={id} name="zone" class="field" data-zone-select>
+  <option value="">{allLabel}</option>
+  {
+    AREA_KEYS.map((area) => (
+      <optgroup label={AREAS[area].name} data-area={area}>
+        {zones
+          .filter((z) => z.data.area === area)
+          .map((z) => (
+            <option value={z.id} data-area={area}>
+              {z.data.name}
+            </option>
+          ))}
+      </optgroup>
+    ))
+  }
+</select>

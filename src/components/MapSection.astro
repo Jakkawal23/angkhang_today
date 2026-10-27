@@ -1,0 +1,95 @@
+---
+// แผนที่ Google Maps (ฝังในหน้า) + ปุ่มนำทาง + วิธีเดินทาง + สถานที่ใกล้เคียง
+// มีพิกัด = ปักหมุดตรงจุด / ไม่มีพิกัด = ค้นหาจากชื่อที่พักและหมู่บ้าน (แจ้งผู้ใช้ว่ายังไม่ยืนยันหมุด)
+import Icon from './Icon.astro';
+import { directionsUrl, fullAddress, hasCoords, mapEmbedUrl, mapQuery, mapUrl, type Stay, type Zone } from '../lib/stays';
+
+interface Props {
+  stay: Stay;
+  zone: Zone;
+}
+const { stay, zone } = Astro.props;
+const loc = stay.data.location;
+const exact = hasCoords(stay);
+const query = mapQuery(stay, zone);
+const address = fullAddress(stay, zone);
+---
+
+<div class="space-y-4">
+  <div class="card overflow-hidden">
+    <iframe
+      src={mapEmbedUrl(query, exact ? 15 : 13)}
+      title={`แผนที่ ${stay.data.name}`}
+      class="h-72 w-full sm:h-96"
+      style="border:0"
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+      allowfullscreen></iframe>
+    <div class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <p class="flex items-start gap-2 text-sm text-slate-700">
+        <Icon name="map-pin" class="mt-0.5 h-4 w-4 shrink-0 text-pine-600" />
+        <span>
+          {address}
+          {
+            exact ? (
+              <span class="block text-xs text-slate-500">
+                พิกัด {loc!.lat}, {loc!.lng}
+              </span>
+            ) : (
+              <span class="block text-xs text-amber-700">ยังไม่มีพิกัดที่ยืนยัน แผนที่แสดงผลการค้นหาจากชื่อที่พัก อาจคลาดเคลื่อน</span>
+            )
+          }
+        </span>
+      </p>
+      <div class="flex shrink-0 gap-2">
+        <a href={loc?.googleMapsUrl ?? mapUrl(query)} target="_blank" rel="noopener" class="btn-outline">
+          <Icon name="external-link" class="h-4 w-4" />
+          Google Maps
+        </a>
+        <a href={directionsUrl(query)} target="_blank" rel="noopener" class="btn-primary">
+          <Icon name="navigation" class="h-4 w-4" />
+          นำทาง
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid gap-4 md:grid-cols-2">
+    {
+      loc && loc.directions.length > 0 && (
+        <div class="card p-4">
+          <h3 class="flex items-center gap-2 font-semibold text-slate-900">
+            <Icon name="route" class="h-5 w-5 text-pine-600" />
+            วิธีเดินทาง
+          </h3>
+          <ol class="mt-3 space-y-2 text-sm text-slate-700">
+            {loc.directions.map((step, i) => (
+              <li class="flex gap-2">
+                <span class="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-pine-700 text-[11px] font-bold text-white">{i + 1}</span>
+                {step}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )
+    }
+    {
+      loc && loc.nearby.length > 0 && (
+        <div class="card p-4">
+          <h3 class="flex items-center gap-2 font-semibold text-slate-900">
+            <Icon name="signpost" class="h-5 w-5 text-pine-600" />
+            สถานที่ใกล้เคียง
+          </h3>
+          <ul class="mt-3 space-y-2 text-sm text-slate-700">
+            {loc.nearby.map((n) => (
+              <li class="flex gap-2">
+                <Icon name="map-pin" class="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+                {n}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+  </div>
+</div>

@@ -1,0 +1,28 @@
+{
+  "name": "angkhang-today",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "checklist": "node scripts/export-checklist.mjs"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
+    "@tailwindcss/vite": "^4.3.3",
+    "astro": "^7.3.8",
+    "flatpickr": "^4.6.13",
+    "lucide-static": "^1.55.0",
+    "simple-icons": "^16.35.0",
+    "tailwindcss": "^4.3.3"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "@astrojs/compiler-binding-wasm32-wasi": "^0.5.1",
+    "exceljs": "^4.4.0",
+    "typescript": "^6.0.3"
+  }
+}

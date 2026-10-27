@@ -1,0 +1,24 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import FaqList from '../components/FaqList.astro';
+import { SITE_FAQS } from '../data/faqs';
+import { breadcrumbLd, faqLd } from '../lib/seo';
+
+const crumbs = [
+  { name: 'หน้าแรก', href: '/' },
+  { name: 'คำถามที่พบบ่อย', href: '/faq' },
+];
+---
+
+<Base
+  title="คำถามที่พบบ่อย ที่พักดอยอ่างขาง การจอง และการป้องกันมิจฉาชีพ"
+  description="รวมคำถามที่พบบ่อยเรื่องที่พักดอยอ่างขาง ควรพักโซนไหน จองล่วงหน้ากี่วัน ขับรถขึ้นดอยยากไหม และวิธีป้องกันเพจที่พักปลอม"
+  jsonLd={[breadcrumbLd(crumbs), faqLd(SITE_FAQS)]}
+>
+  <div class="container-page max-w-3xl space-y-6 py-8">
+    <Breadcrumbs items={crumbs} />
+    <h1 class="text-2xl font-extrabold text-slate-900 sm:text-3xl">คำถามที่พบบ่อย</h1>
+    <FaqList faqs={SITE_FAQS} as="h2" />
+  </div>
+</Base>

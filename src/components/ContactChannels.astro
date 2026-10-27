@@ -1,0 +1,196 @@
+---
+// ช่องทางติดต่ออย่างเป็นทางการทั้งหมดของที่พัก + บัญชีรับโอน + โพสต์จากเพจ Facebook (โหลดเมื่อกด)
+import Icon from './Icon.astro';
+import { BRAND_COLORS, type IconName } from '../lib/icons';
+import { stayPhotos } from '../lib/images';
+import { hasAnyContact, lineAddUrl, lineLabel, telUrl, type Stay } from '../lib/stays';
+
+interface Props {
+  stay: Stay;
+}
+const { stay } = Astro.props;
+const d = stay.data;
+const c = d.contacts;
+const v = d.verified.status;
+const hasPhotos = stayPhotos(stay.id, d.name).length > 0;
+
+const handle = (url: string) =>
+  url
+    .replace(/^https?:\/\/(www\.|m\.)?/, '')
+    .replace(/\/+$/, '');
+
+interface Channel {
+  icon: IconName;
+  color?: string;
+  label: string;
+  value: string;
+  href: string;
+  cta: string;
+  external?: boolean;
+}
+
+const channels: Channel[] = [
+  ...c.phones.map((p) => ({
+    icon: 'phone' as const,
+    label: p.name ? `โทรศัพท์ (${p.name})` : 'โทรศัพท์',
+    value: p.number,
+    href: telUrl(p.number),
+    cta: 'โทรเลย',
+  })),
+  ...(c.line
+    ? [
+        {
+          icon: 'line' as const,
+          color: BRAND_COLORS.line,
+          label: lineLabel(c.line),
+          value: c.line.id ?? 'ลิงก์เพิ่มเพื่อน',
+          href: lineAddUrl(c.line),
+          cta: 'เพิ่มเพื่อน',
+          external: true,
+        },
+      ]
+    : []),
+  ...(c.facebook
+    ? [
+        {
+          icon: 'facebook' as const,
+          color: BRAND_COLORS.facebook,
+          label: 'เพจ Facebook',
+          value: c.facebookName ?? handle(c.facebook),
+          href: c.facebook,
+          cta: 'เปิดเพจ',
+          external: true,
+        },
+      ]
+    : []),
+  ...(c.messenger
+    ? [{ icon: 'message' as const, color: BRAND_COLORS.facebook, label: 'Messenger', value: c.facebookName ?? 'ทักแชตเพจ', href: c.messenger, cta: 'ทักแชต', external: true }]
+    : []),
+  ...(c.instagram
+    ? [{ icon: 'instagram' as const, color: BRAND_COLORS.instagram, label: 'Instagram', value: handle(c.instagram), href: c.instagram, cta: 'เปิด', external: true }]
+    : []),
+  ...(c.tiktok
+    ? [{ icon: 'tiktok' as const, color: BRAND_COLORS.tiktok, label: 'TikTok', value: handle(c.tiktok), href: c.tiktok, cta: 'เปิด', external: true }]
+    : []),
+  ...(c.website ? [{ icon: 'globe' as const, label: 'เว็บไซต์', value: handle(c.website), href: c.website, cta: 'เปิด', external: true }] : []),
+  ...(c.email ? [{ icon: 'mail' as const, label: 'อีเมล', value: c.email, href: `mailto:${c.email}`, cta: 'ส่งอีเมล' }] : []),
+];
+---
+
+<div class="space-y-4">
+  {
+    !hasAnyContact(stay) && (
+      <p class="card flex gap-3 p-4 text-sm text-slate-600">
+        <Icon name="info" class="h-5 w-5 shrink-0" />
+        ยังไม่พบช่องทางติดต่อโดยตรงของที่พักนี้ หากคุณเป็นเจ้าของที่พักหรือมีข้อมูลที่ถูกต้อง แจ้งเราได้ที่หน้าสำหรับเจ้าของที่พัก
+      </p>
+    )
+  }
+  <div class:list={['flex gap-3 rounded-2xl p-4 text-sm', !hasAnyContact(stay) && 'hidden', v ? 'bg-pine-50 text-pine-900' : 'bg-amber-50 text-amber-900']}>
+    <Icon name={v ? 'shield-check' : 'shield-alert'} class="h-5 w-5 shrink-0" />
+    <p>
+      {
+        v ? (
+          <>
+            ช่องทางด้านล่างคือ<strong>ช่องทางทั้งหมดที่ถูกต้อง</strong>ของ {d.name} ตรวจสอบแล้ว ช่องทางอื่นนอกเหนือจากนี้ไม่ใช่ของที่พัก
+          </>
+        ) : (
+          <>ช่องทางด้านล่างรวบรวมจากแหล่งข้อมูลสาธารณะ (ดู "ที่มาของข้อมูล") ทีมงานยังไม่ได้ตรวจสอบกับที่พัก โปรดโทรยืนยันและระมัดระวังก่อนโอนเงิน</>
+        )
+      }
+    </p>
+  </div>
+
+  <ul class="grid gap-3 xl:grid-cols-2">
+    {
+      channels.map((ch) => (
+        <li class="card flex items-center gap-3 p-3">
+          <span
+            class:list={['flex h-11 w-11 shrink-0 items-center justify-center rounded-xl', !ch.color && 'bg-pine-50 text-pine-700']}
+            style={ch.color ? `background:${ch.color};color:#fff` : undefined}
+          >
+            <Icon name={ch.icon} class="h-5 w-5" />
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="flex items-center gap-1 text-xs text-slate-500">
+              {ch.label}
+              {v && <Icon name="badge-check" class="h-3.5 w-3.5 text-pine-600" />}
+            </p>
+            <p class="truncate font-semibold text-slate-900">{ch.value}</p>
+          </div>
+          <a href={ch.href} {...(ch.external && { target: '_blank', rel: 'noopener nofollow' })} class="btn-outline shrink-0 px-3 py-1.5 text-xs">
+            {ch.cta}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+
+  {
+    hasAnyContact(stay) && !c.line && (
+      <p class="flex items-center gap-2 text-xs text-slate-500">
+        <Icon name="info" class="h-4 w-4" />
+        ที่พักนี้ไม่มี LINE ในข้อมูลที่เรามี
+      </p>
+    )
+  }
+
+  {
+    d.bankAccounts.length > 0 && (
+      <div class="card p-4">
+        <h3 class="flex items-center gap-2 font-semibold text-slate-900">
+          <Icon name="banknote" class="h-5 w-5 text-pine-600" />
+          {v ? 'บัญชีรับโอนที่ถูกต้อง' : 'บัญชีรับโอน (ยังไม่ได้ตรวจสอบ)'}
+        </h3>
+        <ul class="mt-3 space-y-2 text-sm">
+          {d.bankAccounts.map((b) => (
+            <li class="rounded-xl bg-slate-50 p-3">
+              <p class="text-slate-500">{b.bank}</p>
+              <p class="font-semibold text-slate-900">{b.accountName}</p>
+              <p class="font-mono tracking-wide text-slate-700">{b.accountNumber}</p>
+            </li>
+          ))}
+        </ul>
+        {v && <p class="mt-3 text-xs text-slate-600">ถ้ามีคนให้โอนเข้าบัญชีชื่ออื่น <strong>อย่าโอน</strong> และแจ้งเราทันที</p>}
+      </div>
+    )
+  }
+
+  {
+    c.facebook && !c.facebookIsPersonal && hasPhotos && (
+      <div class="card p-4" data-fb-wrap data-fb={c.facebook}>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="flex items-center gap-2 font-semibold text-slate-900">
+            <span style={`color:${BRAND_COLORS.facebook}`}>
+              <Icon name="facebook" class="h-5 w-5" />
+            </span>
+            โพสต์ล่าสุดจากเพจ
+          </h3>
+          <button type="button" data-fb-load class="btn-outline px-3 py-1.5 text-xs">
+            แสดงโพสต์จากเพจ
+          </button>
+        </div>
+        <div data-fb-target class="mt-3 hidden" />
+      </div>
+    )
+  }
+</div>
+
+<script>
+  // โหลดกล่องเพจ Facebook เมื่อผู้ใช้กดเท่านั้น (หน้าเว็บเร็วขึ้น และไม่ส่งข้อมูลให้ Facebook ถ้าไม่กด)
+  document.querySelectorAll<HTMLElement>('[data-fb-wrap]').forEach((wrap) => {
+    const btn = wrap.querySelector<HTMLButtonElement>('[data-fb-load]')!;
+    const target = wrap.querySelector<HTMLElement>('[data-fb-target]')!;
+    btn.addEventListener('click', () => {
+      const width = Math.min(500, Math.max(280, Math.floor(target.parentElement!.clientWidth - 32)));
+      const src = `https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(wrap.dataset.fb!)}&tabs=timeline&width=${width}&height=520&small_header=true&adapt_container_width=true&hide_cover=false&show_facepile=false`;
+      const iframe = document.createElement('iframe');
+      Object.assign(iframe, { src, width: String(width), height: '520', title: 'เพจ Facebook ของที่พัก', loading: 'lazy' });
+      iframe.style.border = '0';
+      iframe.style.maxWidth = '100%';
+      target.replaceChildren(iframe);
+      target.classList.remove('hidden');
+      btn.remove();
+    });
+  });
+</script>

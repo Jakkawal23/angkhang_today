@@ -1,0 +1,43 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+
+const nav = [
+  { href: '/stays', label: 'ค้นหาที่พัก' },
+  { href: '/zones', label: 'โซนและเส้นทาง' },
+  { href: '/verify', label: 'ตรวจสอบก่อนโอน' },
+  { href: '/faq', label: 'คำถามที่พบบ่อย' },
+  { href: '/for-owners', label: 'สำหรับเจ้าของที่พัก' },
+];
+const path = Astro.url.pathname;
+const isActive = (href: string) => path === href || path.startsWith(href + '/');
+---
+
+<header class="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur">
+  <div class="container-page flex h-16 items-center justify-between gap-4">
+    <Logo />
+    <nav class="hidden items-center gap-1 md:flex" aria-label="เมนูหลัก">
+      {
+        nav.map((item) => (
+          <a
+            href={item.href}
+            class:list={[
+              'rounded-lg px-3 py-2 text-sm font-medium transition',
+              isActive(item.href) ? 'bg-pine-50 text-pine-800' : 'text-slate-600 hover:text-pine-700',
+            ]}
+            aria-current={isActive(item.href) ? 'page' : undefined}
+          >
+            {item.label}
+          </a>
+        ))
+      }
+    </nav>
+    <a
+      href="/verify"
+      class="btn shrink-0 gap-1.5 rounded-full border border-sakura-400 bg-sakura-50 px-3 py-1.5 text-xs whitespace-nowrap text-sakura-600 md:hidden"
+    >
+      <Icon name="shield-check" class="h-4 w-4" />
+      เช็กก่อนโอน
+    </a>
+  </div>
+</header>

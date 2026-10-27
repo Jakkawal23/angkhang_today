@@ -1,0 +1,71 @@
+---
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { breadcrumbLd } from '../lib/seo';
+import { SITE } from '../data/site';
+import Icon from '../components/Icon.astro';
+import { lineAddUrl } from '../lib/stays';
+
+const crumbs = [
+  { name: 'หน้าแรก', href: '/' },
+  { name: 'สำหรับเจ้าของที่พัก', href: '/for-owners' },
+];
+const needs = [
+  'ชื่อที่พัก ประเภท และโซน/หมู่บ้าน',
+  'รูปภาพที่พัก 5–10 รูป (แนวนอน) และรูปแต่ละประเภทห้อง',
+  'ประเภทห้อง จำนวนห้อง เตียง ขนาดห้อง และราคาวันธรรมดา / วันหยุด / ช่วงพีค',
+  'พิกัด Google Maps ของที่พัก',
+  'สิ่งอำนวยความสะดวก เช่น ฮีตเตอร์ น้ำอุ่น ปิ้งย่างได้ พาสัตว์เลี้ยงได้',
+  'เบอร์โทร LINE เพจ Facebook ที่ใช้จริง',
+  'ชื่อและเลขบัญชีรับโอน (เพื่อการันตี)',
+  'เงื่อนไขมัดจำและการยกเลิก',
+];
+---
+
+<Base
+  title="ลงข้อมูลที่พักดอยอ่างขางฟรี รับเครื่องหมายการันตี"
+  description="เจ้าของที่พักบนดอยอ่างขาง ลงข้อมูลที่พักกับ Angkhang Today ได้ฟรี รับเครื่องหมายการันตีช่องทางติดต่อ ลดปัญหาเพจปลอมแอบอ้างชื่อที่พัก"
+  jsonLd={breadcrumbLd(crumbs)}
+>
+  <div class="container-page max-w-3xl space-y-8 py-8">
+    <Breadcrumbs items={crumbs} />
+    <header class="space-y-2">
+      <h1 class="text-2xl font-extrabold text-slate-900 sm:text-3xl">ลงข้อมูลที่พักฟรี สำหรับเจ้าของที่พักบนดอยอ่างขาง</h1>
+      <p class="text-slate-600">ให้ลูกค้าเจอที่พักของคุณตรง ๆ ไม่ต้องไล่ตอบโพสต์ในกลุ่ม และช่วยป้องกันเพจปลอมที่แอบอ้างชื่อที่พักของคุณ</p>
+    </header>
+
+    <section class="grid gap-3 sm:grid-cols-3">
+      <div class="card p-4">
+        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-pine-50 text-pine-700"><Icon name="wallet" class="h-5 w-5" /></span>
+        <p class="mt-3 font-bold">ฟรี ไม่มีค่าคอมมิชชั่น</p>
+        <p class="text-sm text-slate-600">ลูกค้าติดต่อและโอนเงินให้คุณโดยตรง</p>
+      </div>
+      <div class="card p-4">
+        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-pine-50 text-pine-700"><Icon name="shield-check" class="h-5 w-5" /></span>
+        <p class="mt-3 font-bold">เครื่องหมายการันตี</p>
+        <p class="text-sm text-slate-600">ลูกค้ามั่นใจ ตรวจสอบช่องทางของคุณได้</p>
+      </div>
+      <div class="card p-4">
+        <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-pine-50 text-pine-700"><Icon name="globe" class="h-5 w-5" /></span>
+        <p class="mt-3 font-bold">หน้าเว็บที่พักของคุณเอง</p>
+        <p class="text-sm text-slate-600">ห้องพัก ราคา แผนที่ ช่องทางติดต่อครบ ค้นเจอบน Google</p>
+      </div>
+    </section>
+
+    <section class="card space-y-3 p-5">
+      <h2 class="text-lg font-bold text-slate-900">ข้อมูลที่ต้องเตรียม</h2>
+      <ul class="space-y-2 text-slate-700">{needs.map((n) => <li class="flex gap-2"><Icon name="check" class="mt-0.5 h-5 w-5 shrink-0 text-pine-600" />{n}</li>)}</ul>
+    </section>
+
+    <section class="card space-y-3 p-5">
+      <h2 class="text-lg font-bold text-slate-900">ขั้นตอน</h2>
+      <ol class="list-decimal space-y-2 pl-5 text-slate-700">
+        <li>ทัก LINE {SITE.contact.line} แจ้งว่าต้องการลงข้อมูลที่พัก</li>
+        <li>ส่งข้อมูลและรูปตามรายการด้านบน</li>
+        <li>ทีมงานนัดยืนยันตัวตนและบัญชีรับโอน</li>
+        <li>ที่พักของคุณขึ้นเว็บพร้อมเครื่องหมายการันตี</li>
+      </ol>
+      <a href={lineAddUrl({ type: 'oa', id: SITE.contact.line })} target="_blank" rel="noopener" class="btn-line"><Icon name="line" class="h-5 w-5" />ทัก LINE {SITE.contact.line}</a>
+    </section>
+  </div>
+</Base>

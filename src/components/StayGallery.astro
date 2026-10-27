@@ -1,0 +1,150 @@
+---
+// แกลเลอรีหน้าที่พัก: รูปใหญ่ 1 + รูปเล็ก 4 และปุ่ม "ดูรูปทั้งหมด" เปิดหน้าต่างดูรูปเต็มจอ (เลื่อนซ้าย-ขวาได้บนมือถือ)
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import StayCover from './StayCover.astro';
+import { photoCredit, roomPhotos, stayPhotos } from '../lib/images';
+import type { Stay } from '../lib/stays';
+
+interface Props {
+  stay: Stay;
+}
+const { stay } = Astro.props;
+const main = stayPhotos(stay.id, stay.data.name);
+const rooms = stay.data.rooms.flatMap((r, i) => roomPhotos(stay.id, i, r.name));
+const all = [...main, ...rooms];
+const shown = all.slice(0, 5);
+const credit = photoCredit(stay.id);
+// ปลั๊กอินเพจของ Facebook ใช้ได้กับ "เพจ" เท่านั้น (โปรไฟล์ส่วนตัวแสดงไม่ได้)
+const c = stay.data.contacts;
+const fbPage = c.facebook && !c.facebookIsPersonal ? c.facebook : undefined;
+---
+
+{
+  all.length === 0 && fbPage ? (
+    // ยังไม่มีรูปที่ได้รับอนุญาต -> แสดงรูปและโพสต์จากเพจผ่านปลั๊กอินทางการของ Facebook (Facebook เป็นผู้แสดงผล ไม่ได้คัดลอกรูปมาเก็บ)
+    <div class="grid gap-3 md:grid-cols-[1fr_minmax(280px,500px)]">
+      <div class="relative hidden md:block">
+        <StayCover stay={stay} class="h-full min-h-80 rounded-2xl" eager />
+      </div>
+      <div class="card overflow-hidden p-2">
+        <div data-fb-embed data-fb={fbPage} class="flex min-h-[420px] items-center justify-center text-sm text-slate-500">
+          <span class="inline-flex items-center gap-2">
+            <Icon name="facebook" class="h-5 w-5" />
+            กำลังโหลดรูปจากเพจ Facebook…
+          </span>
+        </div>
+        <p class="px-2 pt-2 text-xs text-slate-500">
+          รูปและโพสต์แสดงผ่านปลั๊กอินของ Facebook จากเพจของที่พักโดยตรง · ลิขสิทธิ์ภาพเป็นของเจ้าของเพจ
+        </p>
+      </div>
+    </div>
+  ) : all.length === 0 ? (
+    <div class="relative">
+      <StayCover stay={stay} class="h-56 rounded-2xl sm:h-80" eager />
+      <p class="absolute right-3 bottom-3 inline-flex items-center gap-1 rounded-full bg-black/50 px-3 py-1 text-xs text-white">
+        <Icon name="images" class="h-3.5 w-3.5" />
+        ยังไม่มีรูปที่ได้รับอนุญาตจากที่พัก
+      </p>
+    </div>
+  ) : (
+    <div data-gallery>
+      <div class:list={['grid gap-2 overflow-hidden rounded-2xl', shown.length > 1 ? 'h-64 grid-cols-4 grid-rows-2 sm:h-[26rem]' : 'h-64 sm:h-[26rem]']}>
+        {shown.map((p, i) => (
+          <button
+            type="button"
+            data-open={i}
+            class:list={['group relative overflow-hidden bg-pine-100', i === 0 ? 'col-span-4 row-span-2 sm:col-span-2' : 'hidden sm:block']}
+            aria-label={`ดูรูป ${p.alt}`}
+          >
+            <Image
+              src={p.src}
+              alt={p.alt}
+              widths={i === 0 ? [640, 960, 1440] : [320, 480]}
+              sizes={i === 0 ? '(min-width: 640px) 50vw, 100vw' : '25vw'}
+              class="h-full w-full object-cover transition group-hover:scale-[1.03]"
+              loading={i === 0 ? 'eager' : 'lazy'}
+            />
+          </button>
+        ))}
+      </div>
+      <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <span>
+          {credit.credit && `ภาพ: ${credit.credit}`}
+          {credit.date && ` · ${credit.date}`}
+        </span>
+        <button type="button" data-open="0" class="btn-outline px-3 py-1.5 text-xs">
+          <Icon name="images" class="h-4 w-4" />
+          ดูรูปทั้งหมด ({all.length})
+        </button>
+      </div>
+
+      <dialog data-lightbox class="m-0 h-full max-h-none w-full max-w-none bg-black/95 p-0 text-white backdrop:bg-black/80">
+        <div class="flex h-full flex-col">
+          <div class="flex items-center justify-between p-3 text-sm">
+            <span data-counter>1 / {all.length}</span>
+            <button type="button" data-close class="rounded-full p-2 hover:bg-white/10" aria-label="ปิด">
+              <Icon name="x" class="h-6 w-6" />
+            </button>
+          </div>
+          <div data-track class="flex flex-1 snap-x snap-mandatory overflow-x-auto [scrollbar-width:none]">
+            {all.map((p) => (
+              <figure class="flex w-full shrink-0 snap-center flex-col items-center justify-center gap-2 px-2">
+                <Image src={p.src} alt={p.alt} widths={[800, 1280, 1920]} sizes="100vw" class="max-h-[78vh] w-auto max-w-full object-contain" loading="lazy" />
+                <figcaption class="text-center text-xs text-white/70">
+                  {p.alt}
+                  {p.credit && ` · ภาพ: ${p.credit}`}
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+          <div class="flex justify-center gap-3 p-3">
+            <button type="button" data-prev class="rounded-full bg-white/10 px-4 py-2 text-sm hover:bg-white/20">ก่อนหน้า</button>
+            <button type="button" data-next class="rounded-full bg-white/10 px-4 py-2 text-sm hover:bg-white/20">ถัดไป</button>
+          </div>
+        </div>
+      </dialog>
+    </div>
+  )
+}
+
+<script>
+  // ปลั๊กอินเพจ Facebook: ขนาดตามความกว้างกล่อง (Facebook รองรับ 180–500px) และโหลดเมื่อเลื่อนมาถึง
+  for (const box of Array.from(document.querySelectorAll<HTMLElement>('[data-fb-embed]'))) {
+    const width = Math.min(500, Math.max(180, Math.floor(box.clientWidth)));
+    const src =
+      `https://www.facebook.com/plugins/page.php?href=${encodeURIComponent(box.dataset.fb!)}` +
+      `&tabs=timeline&width=${width}&height=420&small_header=false&adapt_container_width=true&hide_cover=false&show_facepile=false`;
+    const iframe = document.createElement('iframe');
+    Object.assign(iframe, { src, width: String(width), height: '420', title: 'รูปและโพสต์จากเพจ Facebook ของที่พัก', loading: 'lazy' });
+    iframe.style.border = '0';
+    iframe.style.maxWidth = '100%';
+    box.replaceChildren(iframe);
+  }
+
+  for (const g of Array.from(document.querySelectorAll<HTMLElement>('[data-gallery]'))) {
+    const dlg = g.querySelector<HTMLDialogElement>('[data-lightbox]')!;
+    const track = g.querySelector<HTMLElement>('[data-track]')!;
+    const counter = g.querySelector<HTMLElement>('[data-counter]')!;
+    const total = track.children.length;
+    const go = (i: number) => {
+      const idx = Math.max(0, Math.min(total - 1, i));
+      track.scrollTo({ left: idx * track.clientWidth, behavior: 'smooth' });
+    };
+    const current = () => Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+    track.addEventListener('scroll', () => (counter.textContent = `${current() + 1} / ${total}`), { passive: true });
+    g.querySelectorAll<HTMLElement>('[data-open]').forEach((b) =>
+      b.addEventListener('click', () => {
+        dlg.showModal();
+        requestAnimationFrame(() => (track.scrollLeft = Number(b.dataset.open) * track.clientWidth));
+      }),
+    );
+    g.querySelector('[data-close]')!.addEventListener('click', () => dlg.close());
+    g.querySelector('[data-prev]')!.addEventListener('click', () => go(current() - 1));
+    g.querySelector('[data-next]')!.addEventListener('click', () => go(current() + 1));
+    dlg.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') go(current() + 1);
+      if (e.key === 'ArrowLeft') go(current() - 1);
+    });
+  }
+</script>

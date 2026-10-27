@@ -1,0 +1,452 @@
+---
+// หน้าที่พัก = "เว็บไซต์ของที่พัก" (ใช้แทนการเปิดเพจ/เว็บเอง) — ข้อมูลห้อง ราคา แผนที่ ช่องทางติดต่อครบ
+import { getEntry, render } from 'astro:content';
+import Base from '../../layouts/Base.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ContactBox from '../../components/ContactBox.astro';
+import ContactChannels from '../../components/ContactChannels.astro';
+import FaqList from '../../components/FaqList.astro';
+import Icon from '../../components/Icon.astro';
+import MapSection from '../../components/MapSection.astro';
+import RoomCard from '../../components/RoomCard.astro';
+import StayCard from '../../components/StayCard.astro';
+import StayGallery from '../../components/StayGallery.astro';
+import VerifiedBadge from '../../components/VerifiedBadge.astro';
+import StatusBadge from '../../components/StatusBadge.astro';
+import { AMENITIES } from '../../data/amenities';
+import { AREAS, type AreaInfo } from '../../data/areas';
+import { STAY_TYPES, UNIT_NOUN } from '../../data/stay-types';
+import { BRAND_COLORS } from '../../lib/icons';
+import { roomPhotos } from '../../lib/images';
+import { breadcrumbLd, faqLd, lodgingLd } from '../../lib/seo';
+import {
+  directionsUrl,
+  formatDate,
+  formatTHB,
+  fullAddress,
+  getStays,
+  guestsText,
+  lineAddUrl,
+  mapQuery,
+  priceRange,
+  priceUnit,
+  stayCapacity,
+  stayPrice,
+  telUrl,
+  type Stay,
+} from '../../lib/stays';
+
+export async function getStaticPaths() {
+  const stays = await getStays();
+  return stays.map((stay) => ({ params: { slug: stay.id }, props: { stay, all: stays } }));
+}
+
+interface Props {
+  stay: Stay;
+  all: Stay[];
+}
+const { stay, all } = Astro.props;
+const d = stay.data;
+const c = d.contacts;
+const { Content } = await render(stay);
+const zone = (await getEntry(d.zone))!;
+const area: AreaInfo = AREAS[zone.data.area];
+const type = STAY_TYPES[d.type];
+const cap = stayCapacity(stay);
+const price = stayPrice(stay);
+const noun = UNIT_NOUN[d.type];
+const address = fullAddress(stay, zone);
+const query = mapQuery(stay, zone);
+const nearbyStays = all.filter((s) => s.id !== stay.id && s.data.zone.id === d.zone.id).slice(0, 3);
+const pricedRooms = d.rooms.filter((r) => r.price);
+const hasWeekend = d.rooms.some((r) => r.price?.weekend != null);
+const hasPeak = d.rooms.some((r) => r.price?.peak != null);
+const hasCount = d.rooms.some((r) => r.count);
+const lineHref = c.line ? lineAddUrl(c.line) : undefined;
+
+const crumbs = [
+  { name: 'หน้าแรก', href: '/' },
+  { name: area.short, href: `/routes/${zone.data.area}` },
+  { name: zone.data.name, href: `/zones/${zone.id}` },
+  { name: d.name, href: `/stays/${stay.id}` },
+];
+
+// FAQ อัตโนมัติจากข้อมูลที่พัก + FAQ ที่เขียนเอง => คำตอบสั้นตรงประเด็นสำหรับ Google / AI
+const roomList = d.rooms
+  .map((r) => `${r.name}${r.count ? ` ${r.count} ${noun}` : ''} (พักได้ ${guestsText(r)} คน${r.price ? ` ${formatTHB(r.price.weekday)}` : ''})`)
+  .join(', ');
+const contactText = [
+  c.phones.length && `โทร ${c.phones.map((p) => p.number).join(', ')}`,
+  c.line && `${c.line.type === 'oa' ? 'LINE OA' : 'LINE ส่วนตัว'} ${c.line.id ?? ''}`.trim(),
+  c.facebook && `เพจ Facebook ${c.facebookName ?? ''}`.trim(),
+]
+  .filter(Boolean)
+  .join(' · ');
+const autoFaqs = [
+  { q: `${d.name} ราคาเท่าไหร่?`, a: price ? `ราคา ${priceRange(stay)} ${priceUnit(stay)}${d.price.note ? ` (${d.price.note})` : ''}` : 'ยังไม่มีข้อมูลราคา โปรดสอบถามกับที่พักโดยตรง' },
+  ...(d.rooms.length ? [{ q: `${d.name} มีห้องพักแบบไหนบ้าง?`, a: `มีห้องพัก ${d.rooms.length} แบบ ได้แก่ ${roomList}` }] : []),
+  ...(cap ? [{ q: `${d.name} รองรับได้กี่คน?`, a: `รองรับสูงสุดรวม ${cap.total} คน จาก ${cap.units} ${noun}` }] : []),
+  { q: `${d.name} อยู่ที่ไหน?`, a: `${address} (${zone.data.name}, ${area.name})${d.location?.nearby.length ? ` ใกล้ ${d.location.nearby.join(', ')}` : ''}` },
+  {
+    q: `ติดต่อ ${d.name} ได้ทางไหน?`,
+    a: contactText
+      ? `${contactText}${d.verified.status ? ' — ตรวจสอบโดย Angkhang Today แล้ว' : ' — ข้อมูลจากแหล่งสาธารณะ ยังไม่ได้ตรวจสอบ'}`
+      : 'ยังไม่มีข้อมูลช่องทางติดต่อโดยตรง',
+  },
+];
+const faqs = [...d.faqs, ...autoFaqs];
+const title = `${d.name} ${zone.data.name} ดอยอ่างขาง${price ? ` ราคา ${priceRange(stay)}` : ''}`;
+
+const sections = [
+  { id: 'overview', label: 'ภาพรวม' },
+  { id: 'rooms', label: 'ห้องพักและราคา' },
+  ...(d.amenities.length ? [{ id: 'amenities', label: 'สิ่งอำนวยความสะดวก' }] : []),
+  { id: 'policies', label: 'เงื่อนไข' },
+  { id: 'location', label: 'แผนที่' },
+  { id: 'contacts', label: 'ช่องทางติดต่อ' },
+  { id: 'faq', label: 'คำถาม' },
+];
+const hasPolicies = d.checkIn || d.checkOut || d.policies.deposit || d.policies.cancellation || d.policies.other.length;
+---
+
+<Base title={title} description={d.summary} image={d.images[0]?.src} jsonLd={[lodgingLd(stay, zone), breadcrumbLd(crumbs), faqLd(faqs)]}>
+  <div class="container-page space-y-3 pt-5">
+    <Breadcrumbs items={crumbs} />
+    {
+      d.sample && (
+        <div class="flex gap-2 rounded-xl bg-slate-800 px-4 py-3 text-sm text-white">
+          <Icon name="info" class="mt-0.5 h-4 w-4 shrink-0" />
+          <p>
+            หน้านี้เป็น<strong>ข้อมูลตัวอย่าง</strong> รวบรวมจากแหล่งข้อมูลสาธารณะ (ดู <a href="#sources" class="underline">ที่มาของข้อมูล</a>) ยังไม่ได้ยืนยันกับเจ้าของที่พัก
+            ราคา เบอร์โทร และสถานะเปิดให้บริการอาจเปลี่ยนแปลง
+          </p>
+        </div>
+      )
+    }
+    {
+      d.status === 'unconfirmed' && zone.data.area === 'top' && (
+        <p class="flex gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <Icon name="alert" class="mt-0.5 h-4 w-4 shrink-0" />
+          {area.note}
+        </p>
+      )
+    }
+  </div>
+
+  <!-- ส่วนหัวของที่พัก -->
+  <header class="container-page mt-4 space-y-3">
+    <div class="flex flex-wrap items-center gap-2">
+      <VerifiedBadge verified={d.verified.status} size="md" />
+      <StatusBadge status={d.status} />
+      <a href={`/stays/type/${d.type}`} class="chip text-xs hover:border-pine-500"><Icon name={type.icon} class="h-3.5 w-3.5" />{type.label}</a>
+      <a href={`/zones/${zone.id}`} class="chip text-xs hover:border-pine-500"><Icon name="map-pin" class="h-3.5 w-3.5" />{zone.data.name}</a>
+      <a href={`/routes/${zone.data.area}`} class="chip text-xs hover:border-pine-500"><Icon name={area.icon} class="h-3.5 w-3.5" />{area.short}</a>
+    </div>
+    <h1 class="text-2xl font-extrabold text-slate-900 sm:text-4xl">{d.name}</h1>
+    {d.nameEn && <p class="-mt-2 text-sm text-slate-500">{d.nameEn}</p>}
+    <p class="flex items-start gap-1.5 text-sm text-slate-600"><Icon name="map-pin" class="mt-0.5 h-4 w-4 shrink-0" />{address}</p>
+    <div class="flex flex-wrap gap-2">
+      {c.phones[0] && <a href={telUrl(c.phones[0].number)} class="btn-outline"><Icon name="phone" class="h-4 w-4" />โทร</a>}
+      {lineHref && <a href={lineHref} target="_blank" rel="noopener" class="btn-line"><Icon name="line" class="h-4 w-4" />{c.line!.type === 'oa' ? 'LINE' : 'LINE ส่วนตัว'}</a>}
+      {
+        c.facebook && (
+          <a href={c.facebook} target="_blank" rel="noopener nofollow" class="btn text-white hover:brightness-95" style={`background:${BRAND_COLORS.facebook}`}>
+            <Icon name="facebook" class="h-4 w-4" />
+            Facebook
+          </a>
+        )
+      }
+      <a href={directionsUrl(query)} target="_blank" rel="noopener" class="btn-outline"><Icon name="navigation" class="h-4 w-4" />นำทาง</a>
+    </div>
+  </header>
+
+  <!-- แกลเลอรี -->
+  <div class="container-page mt-5">
+    <StayGallery stay={stay} />
+  </div>
+
+  <!-- เมนูภายในหน้า -->
+  <nav class="sticky top-16 z-30 mt-6 border-y border-slate-200 bg-white/95 backdrop-blur" aria-label="หัวข้อในหน้านี้">
+    <ul class="container-page flex gap-1 overflow-x-auto py-2 text-sm [scrollbar-width:none]">
+      {
+        sections.map((s) => (
+          <li class="shrink-0">
+            <a href={`#${s.id}`} class="block rounded-lg px-3 py-1.5 font-medium text-slate-600 hover:bg-pine-50 hover:text-pine-800">
+              {s.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+
+  <div class="container-page mt-6 grid gap-10 lg:grid-cols-[1fr_360px]">
+    <article class="min-w-0 space-y-12">
+      <!-- ภาพรวม -->
+      <section id="overview" data-section class="space-y-5">
+        <p class="text-lg leading-relaxed text-slate-700">{d.summary}</p>
+        <dl class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="card p-3">
+            <dt class="flex items-center gap-1 text-xs text-slate-500"><Icon name="wallet" class="h-3.5 w-3.5" />ราคา</dt>
+            <dd class:list={['font-bold', price ? 'text-pine-800' : 'text-slate-500']}>{priceRange(stay)}</dd>
+            <dd class="text-xs text-slate-500">{priceUnit(stay)}</dd>
+          </div>
+          <div class="card p-3">
+            <dt class="flex items-center gap-1 text-xs text-slate-500"><Icon name="bed-double" class="h-3.5 w-3.5" />ห้องพัก</dt>
+            <dd class="font-bold text-slate-900">{cap ? `${cap.units} ${noun}` : d.rooms.length ? `${d.rooms.length} แบบ` : 'สอบถาม'}</dd>
+          </div>
+          <div class="card p-3">
+            <dt class="flex items-center gap-1 text-xs text-slate-500"><Icon name="route" class="h-3.5 w-3.5" />เส้นทาง</dt>
+            <dd class="text-sm font-bold text-slate-900">{area.short}</dd>
+          </div>
+          <div class="card p-3">
+            <dt class="flex items-center gap-1 text-xs text-slate-500"><Icon name="clock" class="h-3.5 w-3.5" />เช็กอิน / เอาท์</dt>
+            <dd class="font-bold text-slate-900">{d.checkIn || d.checkOut ? `${d.checkIn ?? '–'} / ${d.checkOut ?? '–'}` : 'สอบถาม'}</dd>
+          </div>
+        </dl>
+        {
+          d.highlights.length > 0 && (
+            <ul class="grid gap-2 sm:grid-cols-2">
+              {d.highlights.map((h) => (
+                <li class="flex gap-2 text-slate-700">
+                  <Icon name="circle-check" class="mt-0.5 h-5 w-5 shrink-0 text-pine-600" />
+                  {h}
+                </li>
+              ))}
+            </ul>
+          )
+        }
+        <div class="prose-content">
+          <Content />
+        </div>
+      </section>
+
+      <!-- ห้องพักและราคา -->
+      <section id="rooms" data-section class="space-y-5">
+        <div>
+          <h2 class="section-title">ห้องพักและราคา</h2>
+          {
+            d.rooms.length > 0 && (
+              <p class="mt-1 text-sm text-slate-600">
+                {d.rooms.length} แบบ{cap && ` · ทั้งหมด ${cap.units} ${noun} · รองรับสูงสุด ${cap.total} คน`}
+              </p>
+            )
+          }
+        </div>
+
+        {
+          d.rooms.length > 0 ? (
+            <>
+              {pricedRooms.length > 0 && (
+                <div class="card overflow-x-auto">
+                  <table class="w-full min-w-[520px] text-sm">
+                    <caption class="sr-only">สรุปราคาห้องพัก {d.name}</caption>
+                    <thead class="bg-slate-50 text-left text-xs text-slate-500">
+                      <tr>
+                        <th scope="col" class="px-3 py-2 font-semibold">ประเภทห้อง</th>
+                        {hasCount && <th scope="col" class="px-3 py-2 font-semibold">จำนวน</th>}
+                        <th scope="col" class="px-3 py-2 font-semibold">พักได้</th>
+                        <th scope="col" class="px-3 py-2 text-right font-semibold">{hasWeekend || hasPeak ? 'วันธรรมดา' : 'ราคา / คืน'}</th>
+                        {hasWeekend && <th scope="col" class="px-3 py-2 text-right font-semibold">วันหยุด</th>}
+                        {hasPeak && <th scope="col" class="px-3 py-2 text-right font-semibold">ช่วงพีค</th>}
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                      {d.rooms.map((r) => (
+                        <tr>
+                          <th scope="row" class="px-3 py-2.5 text-left font-semibold text-slate-900">{r.name}</th>
+                          {hasCount && <td class="px-3 py-2.5">{r.count ? `${r.count} ${noun}` : '–'}</td>}
+                          <td class="px-3 py-2.5">{guestsText(r)} คน</td>
+                          <td class="px-3 py-2.5 text-right font-semibold text-pine-800">{r.price ? formatTHB(r.price.weekday) : 'สอบถาม'}</td>
+                          {hasWeekend && <td class="px-3 py-2.5 text-right">{r.price?.weekend != null ? formatTHB(r.price.weekend) : '–'}</td>}
+                          {hasPeak && <td class="px-3 py-2.5 text-right">{r.price?.peak != null ? formatTHB(r.price.peak) : '–'}</td>}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              <p class="text-xs text-slate-500">
+                {(hasWeekend || hasPeak) && `วันธรรมดา = ${d.seasons.weekday} · วันหยุด = ${d.seasons.weekend}${hasPeak ? ` · ช่วงพีค = ${d.seasons.peak}` : ''}`}
+                {d.price.note && (
+                  <>
+                    {(hasWeekend || hasPeak) && <br />}
+                    {d.price.note}
+                  </>
+                )}
+              </p>
+              <div class="space-y-4">
+                {d.rooms.map((r, i) => (
+                  <RoomCard room={r} stayType={d.type} seasons={d.seasons} photos={roomPhotos(stay.id, i, r.name)} />
+                ))}
+              </div>
+            </>
+          ) : (
+            <div class="card space-y-2 p-4 text-sm text-slate-700">
+              <p class:list={['text-lg font-bold', price ? 'text-pine-800' : 'text-slate-500']}>
+                {priceRange(stay)} <span class="text-sm font-normal text-slate-500">{priceUnit(stay)}</span>
+              </p>
+              {d.price.note && <p>{d.price.note}</p>}
+              <p class="text-slate-500">ยังไม่มีรายละเอียดประเภทห้องพัก สอบถามกับที่พักได้โดยกด "ถามห้องว่าง"</p>
+            </div>
+          )
+        }
+      </section>
+
+      <!-- สิ่งอำนวยความสะดวก -->
+      {
+        d.amenities.length > 0 && (
+          <section id="amenities" data-section>
+            <h2 class="section-title mb-4">สิ่งอำนวยความสะดวก</h2>
+            <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {d.amenities.map((a) => (
+                <li>
+                  <a href={`/stays/tag/${a}`} class="flex items-center gap-2.5 rounded-xl bg-white px-3 py-2.5 text-sm text-slate-700 ring-1 ring-slate-200 hover:ring-pine-400">
+                    <Icon name={AMENITIES[a].icon} class="h-5 w-5 shrink-0 text-pine-600" />
+                    {AMENITIES[a].label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )
+      }
+
+      <!-- เงื่อนไข -->
+      <section id="policies" data-section>
+        <h2 class="section-title mb-4">เงื่อนไขการเข้าพัก</h2>
+        {
+          hasPolicies ? (
+            <dl class="card divide-y divide-slate-100 text-sm">
+              {(d.checkIn || d.checkOut) && (
+                <div class="grid gap-1 p-4 sm:grid-cols-[160px_1fr]">
+                  <dt class="flex items-center gap-2 font-semibold text-slate-500"><Icon name="clock" class="h-4 w-4" />เช็กอิน / เช็กเอาท์</dt>
+                  <dd>
+                    {d.checkIn && `เช็กอินตั้งแต่ ${d.checkIn} น.`} {d.checkOut && `· เช็กเอาท์ก่อน ${d.checkOut} น.`}
+                  </dd>
+                </div>
+              )}
+              {d.policies.deposit && (
+                <div class="grid gap-1 p-4 sm:grid-cols-[160px_1fr]">
+                  <dt class="flex items-center gap-2 font-semibold text-slate-500"><Icon name="banknote" class="h-4 w-4" />มัดจำ / ชำระเงิน</dt>
+                  <dd>{d.policies.deposit}</dd>
+                </div>
+              )}
+              {d.policies.cancellation && (
+                <div class="grid gap-1 p-4 sm:grid-cols-[160px_1fr]">
+                  <dt class="flex items-center gap-2 font-semibold text-slate-500"><Icon name="calendar" class="h-4 w-4" />การยกเลิก</dt>
+                  <dd>{d.policies.cancellation}</dd>
+                </div>
+              )}
+              {d.policies.other.length > 0 && (
+                <div class="grid gap-1 p-4 sm:grid-cols-[160px_1fr]">
+                  <dt class="flex items-center gap-2 font-semibold text-slate-500"><Icon name="scroll" class="h-4 w-4" />กฎของที่พัก</dt>
+                  <dd>
+                    <ul class="space-y-1">
+                      {d.policies.other.map((o) => (
+                        <li class="flex gap-2"><Icon name="check" class="mt-0.5 h-4 w-4 shrink-0 text-pine-600" />{o}</li>
+                      ))}
+                    </ul>
+                  </dd>
+                </div>
+              )}
+            </dl>
+          ) : (
+            <p class="card p-4 text-sm text-slate-500">ยังไม่มีข้อมูลเงื่อนไขการเข้าพัก มัดจำ และการยกเลิก — สอบถามกับที่พักก่อนโอนเงิน</p>
+          )
+        }
+      </section>
+
+      <!-- แผนที่ -->
+      <section id="location" data-section>
+        <h2 class="section-title mb-4">แผนที่และการเดินทาง</h2>
+        <MapSection stay={stay} zone={zone} />
+        <a href={`/routes/${zone.data.area}`} class="card mt-4 flex items-center gap-3 p-4 hover:border-pine-300">
+          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pine-700 text-white"><Icon name={area.icon} class="h-5 w-5" /></span>
+          <span class="min-w-0 flex-1">
+            <span class="block font-semibold text-slate-900">{area.name}</span>
+            <span class="block text-sm text-slate-600">{area.summary}</span>
+          </span>
+          <Icon name="arrow-right" class="h-5 w-5 shrink-0 text-slate-400" />
+        </a>
+      </section>
+
+      <!-- ช่องทางติดต่อ -->
+      <section id="contacts" data-section>
+        <h2 class="section-title mb-4">ช่องทางติดต่อ {d.name}</h2>
+        <ContactChannels stay={stay} />
+        {
+          d.verified.status && (
+            <div class="mt-4 rounded-2xl border border-pine-200 bg-white p-4 text-sm text-slate-700">
+              <h3 class="flex items-center gap-2 font-semibold text-slate-900">
+                <Icon name="list-checks" class="h-5 w-5 text-pine-600" />
+                เราตรวจสอบอะไรบ้าง
+              </h3>
+              <ul class="mt-2 space-y-1">
+                {d.verified.method.map((m) => (
+                  <li class="flex gap-2"><Icon name="check" class="mt-0.5 h-4 w-4 shrink-0 text-pine-600" />{m}</li>
+                ))}
+              </ul>
+              {d.verified.date && <p class="mt-2 text-xs text-slate-500">ตรวจสอบล่าสุด {formatDate(d.verified.date)} · การันตีนี้รับรองช่องทางติดต่อ ไม่ได้รับรองคุณภาพห้องพัก</p>}
+            </div>
+          )
+        }
+      </section>
+
+      <!-- FAQ -->
+      <section id="faq" data-section>
+        <h2 class="section-title mb-4">คำถามที่พบบ่อย</h2>
+        <FaqList faqs={faqs} />
+      </section>
+
+      <!-- ที่มาของข้อมูล -->
+      {
+        d.sources.length > 0 && (
+          <section id="sources" data-section class="card p-4 text-sm">
+            <h2 class="flex items-center gap-2 font-semibold text-slate-900">
+              <Icon name="scroll" class="h-5 w-5 text-pine-600" />
+              ที่มาของข้อมูล
+            </h2>
+            <ul class="mt-2 space-y-1 text-slate-600">
+              {d.sources.map((s) => (
+                <li>
+                  <a href={s.url} target="_blank" rel="noopener nofollow" class="text-pine-700 underline">
+                    {s.title}
+                  </a>
+                  {s.note && <span class="text-slate-500"> — {s.note}</span>}
+                </li>
+              ))}
+            </ul>
+            <p class="mt-2 text-xs text-slate-500">
+              รวบรวมข้อมูลเมื่อ <time datetime={d.updated.toISOString()}>{formatDate(d.updated)}</time> · เป็นเจ้าของที่พักนี้?{' '}
+              <a href="/for-owners" class="underline">แก้ไขข้อมูลและรับเครื่องหมายการันตี</a>
+            </p>
+          </section>
+        )
+      }
+    </article>
+
+    <aside class="lg:sticky lg:top-32 lg:self-start">
+      <ContactBox stay={stay} />
+    </aside>
+  </div>
+
+  {
+    nearbyStays.length > 0 && (
+      <section class="container-page mt-14">
+        <h2 class="section-title">ที่พักอื่นใน{zone.data.name}</h2>
+        <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {nearbyStays.map((s) => (
+            <StayCard stay={s} zoneName={zone.data.name} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  <!-- ปุ่มถามห้องว่างลอยบนมือถือ -->
+  <a href="#ask" class="btn-primary fixed right-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 rounded-full px-5 py-3 shadow-lg lg:hidden">
+    <Icon name="message" class="h-4 w-4" />
+    ถามห้องว่าง
+  </a>
+</Base>

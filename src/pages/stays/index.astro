@@ -1,0 +1,271 @@
+---
+import Base from '../../layouts/Base.astro';
+import StayCard from '../../components/StayCard.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import Icon from '../../components/Icon.astro';
+import ZoneSelect from '../../components/ZoneSelect.astro';
+import AreaSelect from '../../components/AreaSelect.astro';
+import { AMENITIES, type Amenity } from '../../data/amenities';
+import { STAY_TYPES, type StayType } from '../../data/stay-types';
+import { breadcrumbLd, itemListLd } from '../../lib/seo';
+import { getStays, getZoneAreas, getZoneNames } from '../../lib/stays';
+
+const stays = await getStays();
+const zoneNames = await getZoneNames();
+const zoneAreas = await getZoneAreas();
+const crumbs = [
+  { name: 'หน้าแรก', href: '/' },
+  { name: 'ค้นหาที่พัก', href: '/stays' },
+];
+const budgets = [500, 1000, 1500, 2000, 3000, 5000];
+---
+
+<Base
+  title="ค้นหาที่พักดอยอ่างขาง ตามหมู่บ้าน เส้นทาง งบ จำนวนคน"
+  description="ค้นหาที่พักดอยอ่างขางทั้งหมด กรองตามหมู่บ้าน เส้นทาง ประเภท งบประมาณ จำนวนคน และสิ่งอำนวยความสะดวก เช่น วิวทะเลหมอก หมูกระทะ ฮีตเตอร์ พาสัตว์เลี้ยงได้"
+  jsonLd={[breadcrumbLd(crumbs), itemListLd(stays)]}
+>
+  <section class="border-b border-slate-200 bg-white">
+    <div class="container-page space-y-2 py-6">
+      <Breadcrumbs items={crumbs} />
+      <h1 class="text-2xl font-extrabold text-slate-900 sm:text-3xl">ค้นหาที่พักดอยอ่างขาง</h1>
+      <p class="text-sm text-slate-600">เลือกเงื่อนไขที่ต้องการ ผลลัพธ์จะอัปเดตทันที และแชร์ลิงก์ผลการค้นหาให้เพื่อนได้</p>
+    </div>
+  </section>
+
+  <div class="container-page grid gap-6 py-6 md:grid-cols-[280px_1fr]">
+    <!-- ปุ่มเปิดตัวกรอง (มือถือ) -->
+    <button id="filter-toggle" type="button" class="btn-outline w-full md:hidden" aria-controls="filters" aria-expanded="false">
+      <Icon name="sliders" class="h-4 w-4" /> ตัวกรอง <span id="filter-count" class="rounded-full bg-pine-700 px-2 text-xs text-white empty:hidden"></span>
+    </button>
+
+    <form id="filters" class="hidden space-y-5 md:block" role="search" aria-label="ตัวกรองที่พัก">
+      <div>
+        <label class="label" for="f-q">ค้นหาชื่อที่พัก</label>
+        <input id="f-q" name="q" type="search" class="field" placeholder="เช่น บ้านไม้, รีสอร์ท" />
+      </div>
+      <div>
+        <label class="label" for="f-area">เส้นทางขึ้นดอย / พื้นที่</label>
+        <AreaSelect id="f-area" />
+      </div>
+      <div>
+        <label class="label" for="f-zone">หมู่บ้าน</label>
+        <ZoneSelect id="f-zone" />
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="label" for="f-checkin">เช็กอิน</label>
+          <input id="f-checkin" name="checkin" type="text" data-date="checkin" placeholder="วว/ดด/ปปปป" class="field px-2" />
+        </div>
+        <div>
+          <label class="label" for="f-checkout">เช็กเอาท์</label>
+          <input id="f-checkout" name="checkout" type="text" data-date="checkout" placeholder="วว/ดด/ปปปป" class="field px-2" />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="label" for="f-guests">จำนวนคน</label>
+          <input id="f-guests" name="guests" type="number" min="1" inputmode="numeric" class="field" placeholder="ทั้งหมด" />
+        </div>
+        <div>
+          <label class="label" for="f-budget">งบสูงสุด / คืน</label>
+          <select id="f-budget" name="budget" class="field">
+            <option value="">ไม่จำกัด</option>
+            {budgets.map((b) => <option value={b}>≤ ฿{b.toLocaleString('th-TH')}</option>)}
+          </select>
+        </div>
+      </div>
+      <div>
+        <label class="label" for="f-type">ประเภท</label>
+        <select id="f-type" name="type" class="field">
+          <option value="">ทุกประเภท</option>
+          {(Object.keys(STAY_TYPES) as StayType[]).map((k) => <option value={k}>{STAY_TYPES[k].label}</option>)}
+        </select>
+      </div>
+      <fieldset>
+        <legend class="label">ต้องการ (เลือกได้หลายข้อ)</legend>
+        <div class="flex flex-wrap gap-2">
+          {
+            (Object.keys(AMENITIES) as Amenity[]).map((k) => (
+              <label class="chip chip-toggle cursor-pointer text-xs select-none">
+                <input type="checkbox" name="amenity" value={k} class="sr-only" />
+                <Icon name={AMENITIES[k].icon} class="h-3.5 w-3.5 text-pine-600" />
+                {AMENITIES[k].label}
+              </label>
+            ))
+          }
+        </div>
+      </fieldset>
+      <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700">
+        <input type="checkbox" name="line" value="1" class="h-4 w-4 accent-pine-700" />
+        <Icon name="line" class="h-4 w-4 text-[#06C755]" />
+        มี LINE ให้ติดต่อ
+      </label>
+      <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-pine-200 bg-pine-50 p-3 text-sm font-semibold text-pine-800">
+        <input type="checkbox" name="verified" value="1" class="h-4 w-4 accent-pine-700" />
+        <Icon name="shield-check" class="h-4 w-4" />
+        เฉพาะที่การันตีช่องทางติดต่อ
+      </label>
+      <div class="flex gap-2">
+        <button type="reset" class="btn-outline flex-1">ล้างตัวกรอง</button>
+        <button type="submit" class="btn-primary flex-1 md:hidden">ดูผลลัพธ์</button>
+      </div>
+    </form>
+
+    <section aria-live="polite">
+      <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm text-slate-600">พบ <strong id="result-count" class="text-slate-900">{stays.length}</strong> ที่พัก</p>
+        <label class="flex items-center gap-2 text-sm text-slate-600">
+          เรียงตาม
+          <select id="f-sort" name="sort" form="filters" class="field w-auto py-1.5">
+            <option value="">แนะนำ</option>
+            <option value="price-asc">ราคาต่ำ → สูง</option>
+            <option value="price-desc">ราคาสูง → ต่ำ</option>
+            <option value="capacity-desc">รองรับคนมากสุด</option>
+          </select>
+        </label>
+      </div>
+
+      <p id="peak-notice" class="mb-4 hidden rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+        <Icon name="snowflake" class="mr-1 inline h-4 w-4 align-[-3px]" />
+        วันที่คุณเลือกอยู่ในช่วงหน้าหนาว ซึ่งห้องเต็มเร็วมาก แนะนำให้ทักถามห้องว่าง 2–3 แห่งพร้อมกัน
+      </p>
+
+      <div id="stay-list" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        {stays.map((s) => <StayCard stay={s} zoneName={zoneNames[s.data.zone.id]} area={zoneAreas[s.data.zone.id]} filterable />)}
+      </div>
+
+      <div id="empty-state" class="card hidden p-8 text-center text-slate-600">
+        <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-pine-50 text-pine-600">
+          <Icon name="search" class="h-7 w-7" />
+        </span>
+        <p class="mt-2 font-semibold text-slate-800">ยังไม่พบที่พักที่ตรงทุกเงื่อนไข</p>
+        <p class="mt-1 text-sm">ลองเพิ่มงบ ลดจำนวนตัวกรอง หรือเลือกโซนใกล้เคียง</p>
+        <button type="reset" form="filters" class="btn-primary mt-4">ล้างตัวกรอง</button>
+      </div>
+    </section>
+  </div>
+</Base>
+
+<script>
+  import { clearDatePickers, initDatePickers } from '../../scripts/datepicker';
+
+  const form = document.getElementById('filters') as HTMLFormElement;
+  const list = document.getElementById('stay-list') as HTMLElement;
+  const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-stay]'));
+  const originalOrder = [...cards];
+  const countEl = document.getElementById('result-count')!;
+  const emptyEl = document.getElementById('empty-state')!;
+  const peakEl = document.getElementById('peak-notice')!;
+  const toggle = document.getElementById('filter-toggle')!;
+  const filterCount = document.getElementById('filter-count')!;
+
+  // พารามิเตอร์ที่ส่งต่อไปหน้ารายละเอียด เพื่อเติมข้อความถามห้องว่างให้อัตโนมัติ
+  const CARRY = ['checkin', 'checkout', 'guests'];
+
+  function loadFromUrl() {
+    const p = new URLSearchParams(location.search);
+    for (const el of Array.from(form.elements) as HTMLInputElement[]) {
+      if (!el.name) continue;
+      if (el.type === 'checkbox') el.checked = p.getAll(el.name).includes(el.value);
+      else if (p.has(el.name)) el.value = p.get(el.name) ?? '';
+    }
+  }
+
+  function apply() {
+    const fd = new FormData(form);
+    const q = String(fd.get('q') ?? '').trim().toLowerCase();
+    const zone = String(fd.get('zone') ?? '');
+    const area = String(fd.get('area') ?? '');
+    const lineOnly = fd.get('line') === '1';
+    const type = String(fd.get('type') ?? '');
+    const guests = Number(fd.get('guests') || 0);
+    const budget = Number(fd.get('budget') || 0);
+    const amenities = fd.getAll('amenity').map(String);
+    const verifiedOnly = fd.get('verified') === '1';
+    const sort = String(fd.get('sort') ?? '');
+
+    let shown = 0;
+    for (const c of cards) {
+      const d = c.dataset;
+      const has = (d.amenities ?? '').split(' ');
+      const ok =
+        (!q || (d.search ?? '').includes(q)) &&
+        (!area || d.area === area) &&
+        (!zone || d.zone === zone) &&
+        (!lineOnly || d.line === '1') &&
+        (!type || d.type === type) &&
+        (!guests || !d.capacity || Number(d.capacity) >= guests) &&
+        (!budget || !d.price || Number(d.price) <= budget) &&
+        (!verifiedOnly || d.verified === '1') &&
+        amenities.every((a) => has.includes(a));
+      c.hidden = !ok;
+      if (ok) shown++;
+    }
+
+    const sorted = [...originalOrder];
+    // ไม่มีข้อมูลราคา/ความจุ = ไปท้ายรายการ
+    const num = (el: HTMLElement, k: string, empty: number) => (el.dataset[k] ? Number(el.dataset[k]) : empty);
+    if (sort === 'price-asc') sorted.sort((a, b) => num(a, 'price', Infinity) - num(b, 'price', Infinity));
+    if (sort === 'price-desc') sorted.sort((a, b) => num(b, 'price', -1) - num(a, 'price', -1));
+    if (sort === 'capacity-desc') sorted.sort((a, b) => num(b, 'capacity', -1) - num(a, 'capacity', -1));
+    list.append(...sorted);
+
+    countEl.textContent = String(shown);
+    emptyEl.classList.toggle('hidden', shown !== 0);
+    list.classList.toggle('hidden', shown === 0);
+
+    // แจ้งเตือนช่วงหน้าหนาว (พ.ย.–ก.พ.)
+    const checkin = String(fd.get('checkin') ?? '');
+    const month = checkin ? new Date(checkin).getMonth() + 1 : 0;
+    peakEl.classList.toggle('hidden', ![11, 12, 1, 2].includes(month));
+
+    // อัปเดต URL ให้แชร์ได้
+    const params = new URLSearchParams();
+    for (const [k, v] of fd.entries()) if (v !== '') params.append(k, String(v));
+    const qs = params.toString();
+    history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+
+    const active = [area, zone, type, guests, budget, verifiedOnly, lineOnly, q].filter(Boolean).length + amenities.length;
+    filterCount.textContent = active ? String(active) : '';
+
+    const carry = new URLSearchParams();
+    for (const k of CARRY) if (params.get(k)) carry.set(k, params.get(k)!);
+    const carryQs = carry.toString();
+    for (const c of cards) {
+      for (const a of Array.from(c.querySelectorAll<HTMLAnchorElement>('a.stay-link'))) {
+        a.href = `/stays/${c.dataset.stay}${carryQs ? '?' + carryQs : ''}`;
+      }
+    }
+  }
+
+  toggle.addEventListener('click', () => {
+    const open = form.classList.toggle('hidden') === false;
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+  form.addEventListener('input', apply);
+  form.addEventListener('change', apply);
+  // select เรียงลำดับอยู่นอก <form> (ผูกด้วย form="filters") จึงต้องฟัง event แยก
+  document.getElementById('f-sort')!.addEventListener('change', apply);
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    apply();
+    if (window.matchMedia('(max-width: 767px)').matches) {
+      form.classList.add('hidden');
+      toggle.setAttribute('aria-expanded', 'false');
+      list.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+  form.addEventListener('reset', () => {
+    clearDatePickers(form);
+    setTimeout(() => {
+      form.dispatchEvent(new Event('area-sync'));
+      apply();
+    }, 0);
+  });
+
+  loadFromUrl();
+  form.dispatchEvent(new Event('area-sync'));
+  initDatePickers(form);
+  apply();
+</script>

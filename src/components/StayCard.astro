@@ -1,0 +1,96 @@
+---
+import Icon from './Icon.astro';
+import StayCover from './StayCover.astro';
+import VerifiedBadge from './VerifiedBadge.astro';
+import StatusBadge from './StatusBadge.astro';
+import { AMENITIES } from '../data/amenities';
+import { STAY_TYPES } from '../data/stay-types';
+import type { Area } from '../data/areas';
+import { priceRange, priceUnit, stayCapacity, stayPrice, type Stay } from '../lib/stays';
+
+interface Props {
+  stay: Stay;
+  zoneName: string;
+  /** พื้นที่ของหมู่บ้าน (ใช้กับตัวกรองเส้นทาง) */
+  area?: Area;
+  /** เพิ่ม data-* สำหรับตัวกรองฝั่ง client */
+  filterable?: boolean;
+}
+const { stay, zoneName, area, filterable = false } = Astro.props;
+const d = stay.data;
+const cap = stayCapacity(stay);
+const price = stayPrice(stay);
+const type = STAY_TYPES[d.type];
+const lineBadge = d.contacts.line ? (d.contacts.line.type === 'oa' ? 'LINE OA' : 'LINE ส่วนตัว') : undefined;
+const dataAttrs = filterable
+  ? {
+      'data-stay': stay.id,
+      'data-zone': d.zone.id,
+      'data-area': area ?? '',
+      'data-type': d.type,
+      'data-price': price?.min ?? '',
+      'data-capacity': cap?.total ?? '',
+      'data-amenities': d.amenities.join(' '),
+      'data-verified': d.verified.status ? '1' : '0',
+      'data-line': d.contacts.line ? '1' : '0',
+      'data-search': [d.name, d.nameEn, zoneName, d.summary, type.label, ...d.rooms.map((r) => r.name)]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase(),
+    }
+  : {};
+---
+
+<article class="card group flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-lg" {...dataAttrs}>
+  <a href={`/stays/${stay.id}`} class="stay-link relative block" tabindex="-1" aria-hidden="true">
+    <StayCover stay={stay} class="aspect-[3/2]" />
+    <div class="absolute top-3 left-3 flex flex-wrap gap-1">
+      <VerifiedBadge verified={d.verified.status} />
+    </div>
+    {d.sample && <span class="absolute top-3 right-3 rounded bg-black/60 px-1.5 py-0.5 text-[10px] text-white">ข้อมูลตัวอย่าง</span>}
+  </a>
+  <div class="flex flex-1 flex-col gap-2 p-4">
+    <p class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs font-medium text-pine-600">
+      <span class="inline-flex items-center gap-1"><Icon name={type.icon} class="h-3.5 w-3.5" />{type.label}</span>
+      <span class="text-slate-300">·</span>
+      <span class="inline-flex items-center gap-1"><Icon name="map-pin" class="h-3.5 w-3.5" />{zoneName}</span>
+    </p>
+    <h3 class="text-base leading-snug font-bold text-slate-900">
+      <a href={`/stays/${stay.id}`} class="stay-link hover:text-pine-700">{d.name}</a>
+    </h3>
+    <p class="line-clamp-2 text-sm text-slate-600">{d.summary}</p>
+    <div><StatusBadge status={d.status} /></div>
+    <ul class="flex flex-wrap gap-1.5" aria-label="จุดเด่น">
+      {
+        d.amenities.slice(0, 3).map((a) => (
+          <li class="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+            <Icon name={AMENITIES[a].icon} class="h-3.5 w-3.5 text-pine-600" />
+            {AMENITIES[a].label}
+          </li>
+        ))
+      }
+      {
+        lineBadge && (
+          <li class="inline-flex items-center gap-1 rounded-md bg-[#06C755]/10 px-2 py-0.5 text-xs text-[#048a3b]">
+            <Icon name="line" class="h-3.5 w-3.5" />
+            {lineBadge}
+          </li>
+        )
+      }
+    </ul>
+    <div class="mt-auto flex items-end justify-between gap-2 border-t border-slate-100 pt-3">
+      <div>
+        <p class:list={['text-lg font-extrabold', price ? 'text-pine-800' : 'text-slate-500']}>{priceRange(stay)}</p>
+        <p class="text-xs text-slate-500">{priceUnit(stay)}</p>
+      </div>
+      {
+        cap && (
+          <p class="flex items-center gap-1 text-right text-xs text-slate-500">
+            <Icon name="users" class="h-4 w-4" />
+            สูงสุด <span class="font-semibold text-slate-700">{cap.total} คน</span>
+          </p>
+        )
+      }
+    </div>
+  </div>
+</article>

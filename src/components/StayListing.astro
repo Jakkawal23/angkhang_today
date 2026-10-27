@@ -1,0 +1,62 @@
+---
+// เทมเพลตหน้ารวมที่พัก (โซน / ประเภท / คุณสมบัติ) — หน้า static สำหรับ SEO คีย์เวิร์ดหางยาว
+import Base from '../layouts/Base.astro';
+import Breadcrumbs from './Breadcrumbs.astro';
+import StayCard from './StayCard.astro';
+import Icon from './Icon.astro';
+import { breadcrumbLd, itemListLd, type Crumb } from '../lib/seo';
+import { getZoneNames, type Stay } from '../lib/stays';
+
+interface Props {
+  title: string;
+  description: string;
+  heading: string;
+  intro: string;
+  stays: Stay[];
+  crumbs: Crumb[];
+  /** ลิงก์ไปหน้าค้นหาพร้อมตัวกรองเดียวกัน */
+  searchHref: string;
+}
+const { title, description, heading, intro, stays, crumbs, searchHref } = Astro.props;
+const zoneNames = await getZoneNames();
+---
+
+<Base title={title} description={description} jsonLd={[breadcrumbLd(crumbs), itemListLd(stays)]} noindex={stays.length === 0}>
+  <section class="border-b border-slate-200 bg-white">
+    <div class="container-page space-y-3 py-8">
+      <Breadcrumbs items={crumbs} />
+      <h1 class="text-2xl font-extrabold text-slate-900 sm:text-3xl">{heading}</h1>
+      <p class="max-w-3xl leading-relaxed text-slate-600">{intro}</p>
+      <slot name="extra" />
+    </div>
+  </section>
+
+  <section class="container-page py-8">
+    <div class="mb-4 flex items-center justify-between gap-3">
+      <p class="text-sm text-slate-600">พบ <strong class="text-slate-900">{stays.length}</strong> ที่พัก</p>
+      <a href={searchHref} class="btn-outline">
+        <Icon name="sliders" class="h-4 w-4" />
+        ปรับตัวกรองเพิ่ม
+      </a>
+    </div>
+    {
+      stays.length ? (
+        <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {stays.map((s) => (
+            <StayCard stay={s} zoneName={zoneNames[s.data.zone.id]} />
+          ))}
+        </div>
+      ) : (
+        <div class="card p-8 text-center text-slate-600">
+          <span class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-pine-50 text-pine-600">
+            <Icon name="tent" class="h-7 w-7" />
+          </span>
+          <p class="mt-2 font-semibold text-slate-800">ยังไม่มีที่พักในหมวดนี้</p>
+          <p class="mt-1 text-sm">เรากำลังทยอยเพิ่มข้อมูล ลองดูที่พักทั้งหมดก่อนได้เลย</p>
+          <a href="/stays" class="btn-primary mt-4">ดูที่พักทั้งหมด</a>
+        </div>
+      )
+    }
+  </section>
+  <slot />
+</Base>

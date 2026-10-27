@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+import Icon from '../components/Icon.astro';
+---
+
+<Base title="ไม่พบหน้านี้" noindex>
+  <div class="container-page py-20 text-center">
+    <span class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-pine-50 text-pine-600">
+      <Icon name="cloud-fog" class="h-8 w-8" />
+    </span>
+    <h1 class="mt-4 text-2xl font-extrabold text-slate-900">หมอกลงหนา หาหน้านี้ไม่เจอ</h1>
+    <p class="mt-2 text-slate-600">หน้าที่คุณค้นหาอาจถูกย้ายหรือไม่มีอยู่แล้ว</p>
+    <div class="mt-6 flex justify-center gap-2">
+      <a href="/" class="btn-outline">หน้าแรก</a>
+      <a href="/stays" class="btn-primary">ค้นหาที่พัก</a>
+    </div>
+  </div>
+</Base>
