@@ -23,4 +23,4 @@ Allow: /
 User-agent: Google-Extended
 Allow: /
 
-Sitemap: https://www.angkhang.today/sitemap-index.xml
+Sitemap: https://angkhangtoday.vercel.app/sitemap-index.xml
