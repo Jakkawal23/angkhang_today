@@ -14,7 +14,7 @@ const require = createRequire(path.join(root, 'package.json'));
 const ExcelJS = require('exceljs');
 
 const SITE_URL = 'https://angkhangtoday.vercel.app';
-const TEAM = { name: 'Angkhang Today', line: '@angkhangtoday' }; // TODO: เปลี่ยนเป็น LINE จริงของทีม
+const TEAM = { name: 'Angkhang Today', line: 'ak.today' };
 const OUT = path.join(root, 'docs', 'angkhang-contact-checklist.xlsx');
 const FONT = 'Tahoma';
 

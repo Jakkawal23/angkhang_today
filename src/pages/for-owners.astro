@@ -4,7 +4,6 @@ import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { breadcrumbLd } from '../lib/seo';
 import { SITE } from '../data/site';
 import Icon from '../components/Icon.astro';
-import { lineAddUrl } from '../lib/stays';
 
 const crumbs = [
   { name: 'หน้าแรก', href: '/' },
@@ -65,7 +64,7 @@ const needs = [
         <li>ทีมงานนัดยืนยันตัวตนและบัญชีรับโอน</li>
         <li>ที่พักของคุณขึ้นเว็บพร้อมเครื่องหมายการันตี</li>
       </ol>
-      <a href={lineAddUrl({ type: 'oa', id: SITE.contact.line })} target="_blank" rel="noopener" class="btn-line"><Icon name="line" class="h-5 w-5" />ทัก LINE {SITE.contact.line}</a>
+      <a href={SITE.contact.lineUrl} target="_blank" rel="noopener" class="btn-line"><Icon name="line" class="h-5 w-5" />ทัก LINE {SITE.contact.line}</a>
     </section>
   </div>
 </Base>

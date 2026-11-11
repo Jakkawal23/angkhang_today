@@ -34,7 +34,7 @@ const crumbs = [
       <h2>เราหารายได้อย่างไร</h2>
       <p>ช่วงแรกเว็บไซต์ให้บริการฟรีทั้งนักท่องเที่ยวและเจ้าของที่พัก เราไม่รับเงินจองแทนที่พัก การชำระเงินทั้งหมดทำกับเจ้าของที่พักโดยตรง</p>
       <h2>ติดต่อเรา</h2>
-      <p>LINE: {SITE.contact.line} · อีเมล: {SITE.contact.email}</p>
+      <p>LINE: <a href={SITE.contact.lineUrl} target="_blank" rel="noopener">{SITE.contact.line}</a>{SITE.contact.email && <> · อีเมล: <a href={`mailto:${SITE.contact.email}`}>{SITE.contact.email}</a></>}</p>
     </div>
   </article>
 </Base>
