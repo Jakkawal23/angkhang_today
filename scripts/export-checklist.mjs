@@ -29,6 +29,10 @@ const AREA_ORDER = ['top', 'r1249', 'r1178', 'rnongbua'];
 const TYPE = { resort: 'รีสอร์ท', hotel: 'โรงแรม', homestay: 'โฮมสเตย์', guesthouse: 'บ้านพัก/เกสต์เฮาส์', cabin: 'บ้านไม้/บังกะโล', house: 'บ้านทั้งหลัง', tent: 'ลานกางเต็นท์' };
 const STATUS = { open: 'ยืนยันแล้วว่าเปิด', listed: 'พบบนเว็บจอง ต.ค. 2026', unconfirmed: 'ข้อมูลเก่า ยังไม่ยืนยัน' };
 
+// 1 ที่พักอยู่ได้หลายหมู่บ้าน/เส้นทาง: เส้นทางของหมู่บ้าน (area + alsoOn) + routes ของที่พัก
+const stayZoneIds = (s) => [...new Set([s.zone, ...(s.zones ?? [])])];
+const stayAreas = (s) => [...new Set([...stayZoneIds(s).flatMap((id) => [zones[id].area, ...(zones[id].alsoOn ?? [])]), ...(s.routes ?? [])])];
+
 const clean = (n) => n.replace(/\s*\(ตัวอย่าง\)\s*/g, '').trim();
 const pageUrl = (s) => `${SITE_URL}/stays/${s.slug}`;
 const hasPhotos = (slug) => {
@@ -225,8 +229,8 @@ for (const area of AREA_ORDER) {
         'ข้อความพร้อมส่ง (ปกติ)': rowMessage(s),
         'ข้อความพร้อมส่ง (สั้น / ผู้สูงอายุ)': rowMessageShort(s),
         'ประเภท': TYPE[s.type],
-        'เส้นทาง/พื้นที่': AREA[z.area],
-        'หมู่บ้าน/โซน': z.name,
+        'เส้นทาง/พื้นที่': stayAreas(s).map((a) => AREA[a]).join(' / '),
+        'หมู่บ้าน/โซน': stayZoneIds(s).map((id) => zones[id].name).join(' / '),
         'ที่อยู่': addr,
         'แผนที่ Google Maps': link(mapLink(s, z), s.location?.lat != null ? 'เปิดหมุด' : 'ค้นหาจากชื่อ'),
         'พิกัด': s.location?.lat != null ? `${s.location.lat}, ${s.location.lng}` : '',
@@ -502,10 +506,10 @@ addSum(['อนุญาตใช้รูปแล้ว', { formula: `COUNTIF(
 addSum(['ได้รับรูปแล้ว', { formula: `COUNTIF(${rng('ได้รับรูปแล้ว')},"ใช่")` }, '']);
 addSum(['ยืนยันบัญชีรับโอน (พร้อมการันตี)', { formula: `COUNTIF(${rng('ยืนยันบัญชีรับโอน')},"ใช่")` }, '']);
 sum.addRow([]);
-addSum(['ตามเส้นทาง/พื้นที่', 'ที่พัก', 'ได้ข้อมูลครบ'], true);
+addSum(['ตามเส้นทาง/พื้นที่ (ที่พักที่อยู่หลายเส้นทางนับทุกเส้น)', 'ที่พัก', 'ได้ข้อมูลครบ'], true);
 for (const a of AREA_ORDER) {
   const r = sum.rowCount + 1;
-  addSum([AREA[a], { formula: `COUNTIF(${rng('เส้นทาง/พื้นที่')},A${r})` }, { formula: `COUNTIFS(${rng('เส้นทาง/พื้นที่')},A${r},${rng('ผลการติดต่อ')},"ได้ข้อมูลครบแล้ว")` }]);
+  addSum([AREA[a], { formula: `COUNTIF(${rng('เส้นทาง/พื้นที่')},"*"&A${r}&"*")` }, { formula: `COUNTIFS(${rng('เส้นทาง/พื้นที่')},"*"&A${r}&"*",${rng('ผลการติดต่อ')},"ได้ข้อมูลครบแล้ว")` }]);
 }
 sum.addRow([]);
 addSum(['ช่องทางที่มีในข้อมูลปัจจุบัน', 'จำนวน', ''], true);

@@ -25,6 +25,10 @@ import {
   formatTHB,
   fullAddress,
   getStays,
+  getZoneAreas,
+  stayAreas,
+  stayInZone,
+  stayZoneIds,
   guestsText,
   lineAddUrl,
   mapQuery,
@@ -51,13 +55,17 @@ const c = d.contacts;
 const { Content } = await render(stay);
 const zone = (await getEntry(d.zone))!;
 const area: AreaInfo = AREAS[zone.data.area];
+// 1 ที่พักอยู่ได้หลายหมู่บ้าน / หลายเส้นทาง
+const areasByZone = await getZoneAreas();
+const allZones = (await Promise.all(stayZoneIds(stay).map((id) => getEntry('zones', id)))).filter((z) => !!z);
+const allAreas = stayAreas(stay, areasByZone);
 const type = STAY_TYPES[d.type];
 const cap = stayCapacity(stay);
 const price = stayPrice(stay);
 const noun = UNIT_NOUN[d.type];
 const address = fullAddress(stay, zone);
 const query = mapQuery(stay, zone);
-const nearbyStays = all.filter((s) => s.id !== stay.id && s.data.zone.id === d.zone.id).slice(0, 3);
+const nearbyStays = all.filter((s) => s.id !== stay.id && stayZoneIds(s).some((id) => stayInZone(stay, id))).slice(0, 3);
 const pricedRooms = d.rooms.filter((r) => r.price);
 const hasWeekend = d.rooms.some((r) => r.price?.weekend != null);
 const hasPeak = d.rooms.some((r) => r.price?.peak != null);
@@ -124,10 +132,10 @@ const hasPolicies = d.checkIn || d.checkOut || d.policies.deposit || d.policies.
       )
     }
     {
-      d.status === 'unconfirmed' && zone.data.area === 'top' && (
+      d.status === 'unconfirmed' && allAreas.includes('top') && (
         <p class="flex gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <Icon name="alert" class="mt-0.5 h-4 w-4 shrink-0" />
-          {area.note}
+          {AREAS.top.note}
         </p>
       )
     }
@@ -139,8 +147,8 @@ const hasPolicies = d.checkIn || d.checkOut || d.policies.deposit || d.policies.
       <VerifiedBadge verified={d.verified.status} size="md" />
       <StatusBadge status={d.status} />
       <a href={`/stays/type/${d.type}`} class="chip text-xs hover:border-pine-500"><Icon name={type.icon} class="h-3.5 w-3.5" />{type.label}</a>
-      <a href={`/zones/${zone.id}`} class="chip text-xs hover:border-pine-500"><Icon name="map-pin" class="h-3.5 w-3.5" />{zone.data.name}</a>
-      <a href={`/routes/${zone.data.area}`} class="chip text-xs hover:border-pine-500"><Icon name={area.icon} class="h-3.5 w-3.5" />{area.short}</a>
+      {allZones.map((z) => <a href={`/zones/${z.id}`} class="chip text-xs hover:border-pine-500"><Icon name="map-pin" class="h-3.5 w-3.5" />{z.data.name}</a>)}
+      {allAreas.map((a) => <a href={`/routes/${a}`} class="chip text-xs hover:border-pine-500"><Icon name={AREAS[a].icon} class="h-3.5 w-3.5" />{AREAS[a].short}</a>)}
     </div>
     <h1 class="text-2xl font-extrabold text-slate-900 sm:text-4xl">{d.name}</h1>
     {d.nameEn && <p class="-mt-2 text-sm text-slate-500">{d.nameEn}</p>}
@@ -361,14 +369,23 @@ const hasPolicies = d.checkIn || d.checkOut || d.policies.deposit || d.policies.
       <section id="location" data-section>
         <h2 class="section-title mb-4">แผนที่และการเดินทาง</h2>
         <MapSection stay={stay} zone={zone} />
-        <a href={`/routes/${zone.data.area}`} class="card mt-4 flex items-center gap-3 p-4 hover:border-pine-300">
-          <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pine-700 text-white"><Icon name={area.icon} class="h-5 w-5" /></span>
-          <span class="min-w-0 flex-1">
-            <span class="block font-semibold text-slate-900">{area.name}</span>
-            <span class="block text-sm text-slate-600">{area.summary}</span>
-          </span>
-          <Icon name="arrow-right" class="h-5 w-5 shrink-0 text-slate-400" />
-        </a>
+        {allAreas.length > 1 && <p class="mt-4 text-sm font-semibold text-slate-700">เดินทางมาได้ {allAreas.length} เส้นทาง</p>}
+        <div class="mt-2 space-y-2">
+          {
+            allAreas.map((a) => (
+              <a href={`/routes/${a}`} class="card flex items-center gap-3 p-4 hover:border-pine-300">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pine-700 text-white">
+                  <Icon name={AREAS[a].icon} class="h-5 w-5" />
+                </span>
+                <span class="min-w-0 flex-1">
+                  <span class="block font-semibold text-slate-900">{AREAS[a].name}</span>
+                  <span class="block text-sm text-slate-600">{AREAS[a].summary}</span>
+                </span>
+                <Icon name="arrow-right" class="h-5 w-5 shrink-0 text-slate-400" />
+              </a>
+            ))
+          }
+        </div>
       </section>
 
       <!-- ช่องทางติดต่อ -->

@@ -26,15 +26,24 @@ const { id } = Astro.props;
         g.hidden = !show;
         g.disabled = !show;
       });
+      // หมู่บ้านเดียวกันอาจอยู่หลายกลุ่ม (หลายเส้นทาง) -> เลือกตัวเลือกที่อยู่ในกลุ่มของเส้นทางปัจจุบัน
       const opt = zoneSel.selectedOptions[0];
-      if (area && opt?.dataset.area && opt.dataset.area !== area) zoneSel.value = '';
+      if (!area || !opt?.value) return;
+      const areas = (opt.dataset.areas ?? '').split(' ');
+      if (!areas.includes(area)) {
+        zoneSel.value = '';
+        return;
+      }
+      const inGroup = zoneSel.querySelector<HTMLOptionElement>(`optgroup[data-area="${area}"] option[value="${opt.value}"]`);
+      if (inGroup) inGroup.selected = true;
     };
     areaSel.addEventListener('change', syncZones);
-    // เลือกหมู่บ้านก่อน -> ตั้งเส้นทางให้อัตโนมัติ
+    // เลือกหมู่บ้านก่อน -> ตั้งเส้นทางให้ (ถ้าเส้นทางปัจจุบันไม่ผ่านหมู่บ้านนั้น)
     zoneSel.addEventListener('change', () => {
-      const a = zoneSel.selectedOptions[0]?.dataset.area;
-      if (a && areaSel.value !== a) {
-        areaSel.value = a;
+      const opt = zoneSel.selectedOptions[0];
+      const areas = (opt?.dataset.areas ?? '').split(' ').filter(Boolean);
+      if (areas.length && areaSel.value && !areas.includes(areaSel.value)) {
+        areaSel.value = opt!.dataset.area!;
         syncZones();
       }
     });

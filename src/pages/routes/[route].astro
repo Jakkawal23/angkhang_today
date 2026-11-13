@@ -1,17 +1,21 @@
 ---
 // หน้าเส้นทางขึ้นดอย / พื้นที่บนดอย: วิธีเดินทาง + หมู่บ้านบนเส้นทาง + ที่พักทั้งหมด (SEO: "ที่พักเส้นทาง ... อ่างขาง")
+// หมู่บ้านที่อยู่หลายเส้นทาง (alsoOn) และที่พักที่ระบุ routes เพิ่ม จะขึ้นในทุกเส้นทางที่เกี่ยวข้อง
 import Icon from '../../components/Icon.astro';
 import StayListing from '../../components/StayListing.astro';
 import { AREAS, AREA_KEYS, type Area } from '../../data/areas';
-import { getStays, getZones, type Stay, type Zone } from '../../lib/stays';
+import { getStays, getZoneAreas, getZones, stayAreas, stayInZone, zoneAreas, type Stay, type Zone } from '../../lib/stays';
 
 export async function getStaticPaths() {
-  const [zones, stays] = await Promise.all([getZones(), getStays()]);
-  return AREA_KEYS.map((route) => {
-    const routeZones = zones.filter((z) => z.data.area === route);
-    const ids = new Set(routeZones.map((z) => z.id));
-    return { params: { route }, props: { route, zones: routeZones, stays: stays.filter((s) => ids.has(s.data.zone.id)) } };
-  });
+  const [zones, stays, areasByZone] = await Promise.all([getZones(), getStays(), getZoneAreas()]);
+  return AREA_KEYS.map((route) => ({
+    params: { route },
+    props: {
+      route,
+      zones: zones.filter((z) => zoneAreas(z).includes(route)),
+      stays: stays.filter((s) => stayAreas(s, areasByZone).includes(route)),
+    },
+  }));
 }
 
 interface Props {
@@ -23,7 +27,7 @@ const { route, zones, stays } = Astro.props;
 const a = AREAS[route];
 const isTop = route === 'top';
 const heading = isTop ? 'ที่พักบนดอยอ่างขาง' : `ที่พัก${a.name}`;
-const count = (id: string) => stays.filter((s) => s.data.zone.id === id).length;
+const count = (id: string) => stays.filter((s) => stayInZone(s, id)).length;
 ---
 
 <StayListing
@@ -66,6 +70,7 @@ const count = (id: string) => stays.filter((s) => s.data.zone.id === id).length;
               <Icon name="map-pin" class="h-4 w-4 text-pine-600" />
               {z.data.name}
               <span class="text-xs text-slate-400">{count(z.id)}</span>
+              {zoneAreas(z).length > 1 && <span class="rounded bg-sakura-50 px-1 text-[10px] text-sakura-600">หลายเส้นทาง</span>}
             </a>
           ))
         }

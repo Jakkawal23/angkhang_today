@@ -4,15 +4,15 @@ import Breadcrumbs from '../../components/Breadcrumbs.astro';
 import Icon from '../../components/Icon.astro';
 import { AREAS, AREA_KEYS } from '../../data/areas';
 import { breadcrumbLd } from '../../lib/seo';
-import { getStays, getZones } from '../../lib/stays';
+import { getStays, getZones, stayInZone, zoneAreas } from '../../lib/stays';
 
 const [zones, stays] = await Promise.all([getZones(), getStays()]);
 const crumbs = [
   { name: 'หน้าแรก', href: '/' },
   { name: 'เส้นทางและหมู่บ้าน', href: '/zones' },
 ];
-const count = (id: string) => stays.filter((s) => s.data.zone.id === id).length;
-const groups = AREA_KEYS.map((key) => ({ key, area: AREAS[key], zones: zones.filter((z) => z.data.area === key) }));
+const count = (id: string) => stays.filter((s) => stayInZone(s, id)).length;
+const groups = AREA_KEYS.map((key) => ({ key, area: AREAS[key], zones: zones.filter((z) => zoneAreas(z).includes(key)) }));
 ---
 
 <Base

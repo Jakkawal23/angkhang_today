@@ -2,13 +2,13 @@
 import Icon from '../../components/Icon.astro';
 import StayListing from '../../components/StayListing.astro';
 import { AREAS } from '../../data/areas';
-import { getStays, getZones, mapUrl, type Stay, type Zone } from '../../lib/stays';
+import { getStays, getZones, mapUrl, stayInZone, zoneAreas, type Stay, type Zone } from '../../lib/stays';
 
 export async function getStaticPaths() {
   const [zones, stays] = await Promise.all([getZones(), getStays()]);
   return zones.map((zone) => ({
     params: { zone: zone.id },
-    props: { zone, stays: stays.filter((s) => s.data.zone.id === zone.id) },
+    props: { zone, stays: stays.filter((s) => stayInZone(s, zone.id)) },
   }));
 }
 
@@ -19,7 +19,8 @@ interface Props {
 const { zone, stays } = Astro.props;
 const z = zone.data;
 const area = AREAS[z.area];
-const heading = z.area === 'top' ? `ที่พัก${z.name} ดอยอ่างขาง` : `ที่พัก${z.name} (${area.short})`;
+const routes = zoneAreas(zone);
+const heading = z.area === 'top' ? `ที่พัก${z.name} ดอยอ่างขาง` : `ที่พัก${z.name} (${routes.map((r) => AREAS[r].short).join(' / ')})`;
 const mapSearch = [z.name, z.subdistrict && `ต.${z.subdistrict}`, z.district && `อ.${z.district}`, 'เชียงใหม่'].filter(Boolean).join(' ');
 ---
 
@@ -34,10 +35,17 @@ const mapSearch = [z.name, z.subdistrict && `ต.${z.subdistrict}`, z.district &
     { name: area.short, href: `/routes/${z.area}` },
     { name: z.name, href: `/zones/${zone.id}` },
   ]}
-  searchHref={`/stays?area=${z.area}&zone=${zone.id}`}
+  searchHref={`/stays?zone=${zone.id}`}
 >
   <div slot="extra" class="flex flex-wrap items-center gap-2 pt-1">
-    <a href={`/routes/${z.area}`} class="chip text-xs hover:border-pine-500"><Icon name={area.icon} class="h-3.5 w-3.5 text-pine-600" />{area.name}</a>
+    {
+      routes.map((r) => (
+        <a href={`/routes/${r}`} class="chip text-xs hover:border-pine-500">
+          <Icon name={AREAS[r].icon} class="h-3.5 w-3.5 text-pine-600" />
+          {AREAS[r].name}
+        </a>
+      ))
+    }
     {z.goodFor.map((g) => <span class="chip text-xs"><Icon name="thumbs-up" class="h-3.5 w-3.5 text-pine-600" />{g}</span>)}
     <a href={mapUrl(mapSearch)} target="_blank" rel="noopener" class="chip text-xs hover:border-pine-500">
       <Icon name="map" class="h-3.5 w-3.5 text-pine-600" />

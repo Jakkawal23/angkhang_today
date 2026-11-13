@@ -1,7 +1,8 @@
 ---
 // เลือกหมู่บ้าน: แยกกลุ่มตามพื้นที่ (บนดอย / เส้น 1249 / เส้น 1178 / เส้นหนองบัว)
+// หมู่บ้านที่อยู่หลายเส้นทาง (เช่น บ้านผาแดง) จะแสดงในทุกกลุ่มที่เกี่ยวข้อง
 import { AREAS, AREA_KEYS } from '../data/areas';
-import { getZones } from '../lib/stays';
+import { getZones, zoneAreas } from '../lib/stays';
 
 interface Props {
   id: string;
@@ -17,9 +18,9 @@ const zones = await getZones();
     AREA_KEYS.map((area) => (
       <optgroup label={AREAS[area].name} data-area={area}>
         {zones
-          .filter((z) => z.data.area === area)
+          .filter((z) => zoneAreas(z).includes(area))
           .map((z) => (
-            <option value={z.id} data-area={area}>
+            <option value={z.id} data-area={area} data-areas={zoneAreas(z).join(' ')}>
               {z.data.name}
             </option>
           ))}

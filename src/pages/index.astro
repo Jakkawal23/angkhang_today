@@ -10,7 +10,7 @@ import { AMENITIES, type Amenity } from '../data/amenities';
 import type { IconName } from '../lib/icons';
 import { AREAS, AREA_KEYS } from '../data/areas';
 import { faqLd, websiteLd } from '../lib/seo';
-import { getStays, getZoneNames, getZones } from '../lib/stays';
+import { getStays, getZoneAreas, getZoneNames, getZones, stayAreas, stayInZone, zoneAreas } from '../lib/stays';
 
 const stays = await getStays();
 const zones = await getZones();
@@ -18,11 +18,12 @@ const zoneNames = await getZoneNames();
 // ยังไม่มีที่พักการันตี -> แสดงที่พักที่มีข้อมูลครบที่สุดแทน
 const verifiedStays = stays.filter((s) => s.data.verified.status);
 const featured = (verifiedStays.length ? verifiedStays : stays).slice(0, 6);
-const countByZone = (id: string) => stays.filter((s) => s.data.zone.id === id).length;
+const areasByZone = await getZoneAreas();
+const countByZone = (id: string) => stays.filter((s) => stayInZone(s, id)).length;
 const verifiedCount = stays.filter((s) => s.data.verified.status).length;
 const groups = AREA_KEYS.map((key) => {
-  const list = zones.filter((z) => z.data.area === key);
-  return { key, area: AREAS[key], zones: list, total: list.reduce((n, z) => n + countByZone(z.id), 0) };
+  const list = zones.filter((z) => zoneAreas(z).includes(key));
+  return { key, area: AREAS[key], zones: list, total: stays.filter((s) => stayAreas(s, areasByZone).includes(key)).length };
 });
 
 // ทางลัดตามความต้องการที่คนมักโพสต์ถามในกลุ่ม

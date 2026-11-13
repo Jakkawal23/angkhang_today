@@ -5,10 +5,10 @@ import { SITE_FAQS } from '../data/faqs';
 import { AMENITIES } from '../data/amenities';
 import { STAY_TYPES, UNIT_NOUN } from '../data/stay-types';
 import { AREAS, AREA_KEYS } from '../data/areas';
-import { formatTHB, getStays, getZoneNames, getZones, guestsText, priceRange, priceUnit, stayCapacity } from '../lib/stays';
+import { formatTHB, getStays, getZoneAreas, getZoneNames, getZones, guestsText, priceRange, priceUnit, stayAreas, stayCapacity, stayZoneIds, zoneAreas } from '../lib/stays';
 
 export const GET: APIRoute = async () => {
-  const [stays, zones, zoneNames] = await Promise.all([getStays(), getZones(), getZoneNames()]);
+  const [stays, zones, zoneNames, areasByZone] = await Promise.all([getStays(), getZones(), getZoneNames(), getZoneAreas()]);
   const url = (p: string) => new URL(p, SITE.url).href;
 
   const lines = [
@@ -28,7 +28,7 @@ export const GET: APIRoute = async () => {
     ...AREA_KEYS.flatMap((a) => [
       `### [${AREAS[a].name}](${url(`/routes/${a}`)})`,
       AREAS[a].summary,
-      ...zones.filter((z) => z.data.area === a).map((z) => `- [${z.data.name}](${url(`/zones/${z.id}`)}): ${z.data.summary}`),
+      ...zones.filter((z) => zoneAreas(z).includes(a)).map((z) => `- [${z.data.name}](${url(`/zones/${z.id}`)}): ${z.data.summary}`),
       '',
     ]),
     '',
@@ -36,7 +36,7 @@ export const GET: APIRoute = async () => {
     ...stays.map((s) => {
       const d = s.data;
       const tags = d.amenities.map((a) => AMENITIES[a].label).join(', ');
-      const head = `- [${d.name}](${url(`/stays/${s.id}`)}): ${STAY_TYPES[d.type].label} ${zoneNames[d.zone.id]} · ${priceRange(s)} ${priceUnit(s)} ${stayCapacity(s) ? ` · รองรับ ${stayCapacity(s)!.total} คน` : ''} · ${d.verified.status ? 'การันตีช่องทางติดต่อแล้ว' : 'ยังไม่ได้ตรวจสอบ'}${d.sample ? ' · (ข้อมูลตัวอย่าง)' : ''} · ${tags}`;
+      const head = `- [${d.name}](${url(`/stays/${s.id}`)}): ${STAY_TYPES[d.type].label} ${stayZoneIds(s).map((id) => zoneNames[id]).join(' / ')} (${stayAreas(s, areasByZone).map((a) => AREAS[a].short).join(', ')}) · ${priceRange(s)} ${priceUnit(s)} ${stayCapacity(s) ? ` · รองรับ ${stayCapacity(s)!.total} คน` : ''} · ${d.verified.status ? 'การันตีช่องทางติดต่อแล้ว' : 'ยังไม่ได้ตรวจสอบ'}${d.sample ? ' · (ข้อมูลตัวอย่าง)' : ''} · ${tags}`;
       const rooms = d.rooms.map(
         (r) =>
           `  - ${[

@@ -31,10 +31,25 @@ export async function getZoneNames(): Promise<Record<string, string>> {
   return Object.fromEntries((await getZones()).map((z) => [z.id, z.data.name]));
 }
 
-/** zone id -> area (บนดอย / เส้นทาง) */
-export async function getZoneAreas(): Promise<Record<string, Area>> {
-  return Object.fromEntries((await getZones()).map((z) => [z.id, z.data.area]));
+// ---------- หมู่บ้าน / เส้นทาง (1 ที่พักอยู่ได้หลายหมู่บ้าน หลายเส้นทาง) ----------
+
+/** เส้นทางทั้งหมดของหมู่บ้าน: เส้นหลัก + alsoOn */
+export const zoneAreas = (z: Zone): Area[] => [...new Set([z.data.area, ...z.data.alsoOn])];
+
+/** zone id -> เส้นทางทั้งหมดของหมู่บ้านนั้น */
+export async function getZoneAreas(): Promise<Record<string, Area[]>> {
+  return Object.fromEntries((await getZones()).map((z) => [z.id, zoneAreas(z)]));
 }
+
+/** หมู่บ้านทั้งหมดของที่พัก: หมู่บ้านหลัก + zones เพิ่มเติม (หมู่บ้านหลักอยู่ลำดับแรก) */
+export const stayZoneIds = (s: Stay): string[] => [...new Set([s.data.zone.id, ...s.data.zones.map((z) => z.id)])];
+
+/** เส้นทางทั้งหมดของที่พัก: เส้นทางของทุกหมู่บ้านที่สังกัด + routes เพิ่มเติม */
+export const stayAreas = (s: Stay, areasByZone: Record<string, Area[]>): Area[] => [
+  ...new Set([...stayZoneIds(s).flatMap((id) => areasByZone[id] ?? []), ...s.data.routes]),
+];
+
+export const stayInZone = (s: Stay, zoneId: string) => stayZoneIds(s).includes(zoneId);
 
 export const areaName = (a: Area) => AREAS[a].name;
 

@@ -8,7 +8,7 @@ import AreaSelect from '../../components/AreaSelect.astro';
 import { AMENITIES, type Amenity } from '../../data/amenities';
 import { STAY_TYPES, type StayType } from '../../data/stay-types';
 import { breadcrumbLd, itemListLd } from '../../lib/seo';
-import { getStays, getZoneAreas, getZoneNames } from '../../lib/stays';
+import { getStays, getZoneAreas, getZoneNames, stayAreas } from '../../lib/stays';
 
 const stays = await getStays();
 const zoneNames = await getZoneNames();
@@ -132,7 +132,7 @@ const budgets = [500, 1000, 1500, 2000, 3000, 5000];
       </p>
 
       <div id="stay-list" class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-        {stays.map((s) => <StayCard stay={s} zoneName={zoneNames[s.data.zone.id]} area={zoneAreas[s.data.zone.id]} filterable />)}
+        {stays.map((s) => <StayCard stay={s} zoneName={zoneNames[s.data.zone.id]} areas={stayAreas(s, zoneAreas)} filterable />)}
       </div>
 
       <div id="empty-state" class="card hidden p-8 text-center text-slate-600">
@@ -191,8 +191,8 @@ const budgets = [500, 1000, 1500, 2000, 3000, 5000];
       const has = (d.amenities ?? '').split(' ');
       const ok =
         (!q || (d.search ?? '').includes(q)) &&
-        (!area || d.area === area) &&
-        (!zone || d.zone === zone) &&
+        (!area || (d.area ?? '').split(' ').includes(area)) &&
+        (!zone || (d.zone ?? '').split(' ').includes(zone)) &&
         (!lineOnly || d.line === '1') &&
         (!type || d.type === type) &&
         (!guests || !d.capacity || Number(d.capacity) >= guests) &&

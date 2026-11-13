@@ -6,17 +6,17 @@ import StatusBadge from './StatusBadge.astro';
 import { AMENITIES } from '../data/amenities';
 import { STAY_TYPES } from '../data/stay-types';
 import type { Area } from '../data/areas';
-import { priceRange, priceUnit, stayCapacity, stayPrice, type Stay } from '../lib/stays';
+import { priceRange, priceUnit, stayCapacity, stayPrice, stayZoneIds, type Stay } from '../lib/stays';
 
 interface Props {
   stay: Stay;
   zoneName: string;
-  /** พื้นที่ของหมู่บ้าน (ใช้กับตัวกรองเส้นทาง) */
-  area?: Area;
+  /** เส้นทางทั้งหมดของที่พัก (ใช้กับตัวกรองเส้นทาง) */
+  areas?: Area[];
   /** เพิ่ม data-* สำหรับตัวกรองฝั่ง client */
   filterable?: boolean;
 }
-const { stay, zoneName, area, filterable = false } = Astro.props;
+const { stay, zoneName, areas = [], filterable = false } = Astro.props;
 const d = stay.data;
 const cap = stayCapacity(stay);
 const price = stayPrice(stay);
@@ -25,8 +25,8 @@ const lineBadge = d.contacts.line ? (d.contacts.line.type === 'oa' ? 'LINE OA' :
 const dataAttrs = filterable
   ? {
       'data-stay': stay.id,
-      'data-zone': d.zone.id,
-      'data-area': area ?? '',
+      'data-zone': stayZoneIds(stay).join(' '),
+      'data-area': areas.join(' '),
       'data-type': d.type,
       'data-price': price?.min ?? '',
       'data-capacity': cap?.total ?? '',

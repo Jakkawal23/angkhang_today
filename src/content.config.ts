@@ -9,7 +9,10 @@ import { PRICE_UNIT_KEYS, STAY_TYPE_KEYS } from './data/stay-types';
 const zones = defineCollection({
   loader: file('src/data/zones.json'),
   schema: z.object({
+    /** เส้นทาง/พื้นที่หลัก */
     area: z.enum(AREA_KEYS),
+    /** เส้นทางอื่นที่หมู่บ้านนี้อยู่ด้วย (เช่น บ้านผาแดงอยู่ทั้งเส้น 1178 และเส้นหนองบัว) */
+    alsoOn: z.array(z.enum(AREA_KEYS)).default([]),
     order: z.number(),
     name: z.string(),
     nameEn: z.string(),
@@ -72,7 +75,12 @@ const stays = defineCollection({
       draft: z.boolean().default(false),
       featured: z.boolean().default(false),
       type: z.enum(STAY_TYPE_KEYS),
+      /** หมู่บ้าน/โซนหลัก (ใช้ทำที่อยู่และ breadcrumb) */
       zone: reference('zones'),
+      /** หมู่บ้าน/โซนเพิ่มเติมที่ที่พักนี้ควรแสดงด้วย */
+      zones: z.array(reference('zones')).default([]),
+      /** เส้นทางเพิ่มเติม (นอกเหนือจากเส้นทางของหมู่บ้าน) */
+      routes: z.array(z.enum(AREA_KEYS)).default([]),
       summary: z.string().max(220),
       /** ถ้ามี rooms ระบบคำนวณราคาต่ำสุด/สูงสุดให้เอง ไม่ต้องกรอก min/max */
       price: z

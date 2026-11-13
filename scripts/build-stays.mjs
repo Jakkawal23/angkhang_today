@@ -36,15 +36,18 @@ const scalar = (v) => (typeof v === 'string' ? JSON.stringify(v) : String(v));
 
 fs.mkdirSync(outDir, { recursive: true });
 for (const { slug, ...data } of STAYS) {
+  // ค่าเริ่มต้นสำหรับข้อมูลตัวอย่าง — ที่พักที่ใส่ค่าเองใน real-stays.mjs จะใช้ค่าของตัวเอง
   const fm = {
     sample: true,
     status: 'unconfirmed',
     ...data,
-    verified: { status: false },
-    updated: UPDATED,
+    verified: data.verified ?? { status: false },
+    updated: data.updated ?? UPDATED,
   };
   const file = path.join(outDir, `${slug}.md`);
-  const header = '# ข้อมูลตัวอย่าง: รวบรวมจากแหล่งข้อมูลสาธารณะ ยังไม่ได้ยืนยันกับเจ้าของที่พัก (แก้ข้อมูลต้นทางที่ scripts/real-stays.mjs)';
+  const header = fm.sample
+    ? '# ข้อมูลตัวอย่าง: รวบรวมจากแหล่งข้อมูลสาธารณะ ยังไม่ได้ยืนยันกับเจ้าของที่พัก (แก้ข้อมูลต้นทางที่ scripts/real-stays.mjs)'
+    : '# สร้างจาก scripts/real-stays.mjs — แก้ข้อมูลที่ไฟล์นั้น แล้วรัน node scripts/build-stays.mjs';
   fs.writeFileSync(file, `---\n${header}${yaml(fm)}\n---\n`);
 }
 console.log(`เขียน ${STAYS.length} ไฟล์ที่ ${path.relative(root, outDir)}`);
